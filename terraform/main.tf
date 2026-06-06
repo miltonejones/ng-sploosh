@@ -223,9 +223,7 @@ resource "aws_cloudfront_distribution" "remote_distributions" {
     default_ttl            = 3600
     max_ttl                = 86400
     compress               = true
-    
-    # Attach the CORS policy
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
+     
   }
 
   custom_error_response {
