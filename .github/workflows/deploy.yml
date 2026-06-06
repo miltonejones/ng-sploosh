@@ -57,39 +57,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.11.1 # Updated version with new GPG keys
-
-      - name: Clean Terraform Cache
-        run: |
-          rm -rf ~/.terraform.d/plugin-cache
-          rm -rf terraform/.terraform
-          rm -f terraform/.terraform.lock.hcl
-
-      - name: Terraform Init
+      # Get existing CloudFront URLs without running terraform apply
+      - name: Get existing infrastructure outputs
+        id: infra
         run: |
           cd terraform
-          terraform init -upgrade
-        env:
-          TF_VAR_environment: ${{ steps.env.outputs.ENVIRONMENT }}
-          # Disable signature verification as fallback
-          TF_DISABLE_SIGNATURE_VERIFICATION: '1'
+          terraform init -input=false
 
-      - name: Terraform Apply
-        id: terraform
-        run: |
-          cd terraform
-          terraform apply -auto-approve \
-            -var="environment=${{ steps.env.outputs.ENVIRONMENT }}"
+          # Only refresh state, don't apply changes
+          terraform refresh -input=false
 
+          # Get outputs
           echo "HOST_URL=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
           echo "HOST_BUCKET=$(terraform output -raw host_s3_bucket_name)" >> $GITHUB_OUTPUT
           terraform output -json federation_manifest > /tmp/federation-manifest.json
           terraform output -json remote_s3_bucket_names > /tmp/remote-buckets.json
         env:
-          TF_VAR_environment: ${{ steps.env.outputs.ENVIRONMENT }}
           TF_DISABLE_SIGNATURE_VERIFICATION: '1'
 
       # Rest of your workflow continues...
