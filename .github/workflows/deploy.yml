@@ -1,10 +1,8 @@
-name: Deploy MFE to AWS
+name: Deploy MFE Applications
 
 on:
   push:
-    branches:
-      - main
-      - staging
+    branches: [main, staging]
   workflow_dispatch:
     inputs:
       environment:
@@ -23,32 +21,17 @@ env:
 
 jobs:
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || 'staging') }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Set environment
-        id: env
-        run: |
-          if [[ "${{ github.event.inputs.environment }}" != "" ]]; then
-            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "ENVIRONMENT=prod" >> $GITHUB_OUTPUT
-          else
-            echo "ENVIRONMENT=staging" >> $GITHUB_OUTPUT
-          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -60,34 +43,67 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.11.1 # Updated version with new GPG keys
+          terraform_version: 1.11.1
 
-      # Get existing CloudFront URLs without running terraform apply
-      - name: Get existing infrastructure outputs
-        id: infra
+      - name: Terraform Init
         run: |
           cd terraform
-          terraform init -input=false
-
-          # Only refresh state, don't apply changes
-          terraform refresh -input=false
-
-          # Get outputs
-          echo "HOST_URL=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
-          echo "HOST_BUCKET=$(terraform output -raw host_s3_bucket_name)" >> $GITHUB_OUTPUT
-          terraform output -json federation_manifest > /tmp/federation-manifest.json
-          terraform output -json remote_s3_bucket_names > /tmp/remote-buckets.json
+          terraform init
         env:
           TF_DISABLE_SIGNATURE_VERIFICATION: '1'
 
-      # Rest of your workflow continues...
-      - name: Generate production federation manifest
+      - name: Terraform Apply (Create/Update Infrastructure)
+        id: terraform
+        run: |
+          cd terraform
+          terraform apply -auto-approve
+
+          # Now get outputs (infrastructure exists)
+          echo "HOST_URL=$(terraform output -raw host_app_url 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "HOST_BUCKET=$(terraform output -raw host_s3_bucket_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+
+          # Save outputs to files (will exist after first apply)
+          terraform output -json federation_manifest 2>/dev/null > /tmp/federation-manifest.json || echo "{}" > /tmp/federation-manifest.json
+          terraform output -json remote_s3_bucket_names 2>/dev/null > /tmp/remote-buckets.json || echo "{}" > /tmp/remote-buckets.json
+        env:
+          TF_DISABLE_SIGNATURE_VERIFICATION: '1'
+
+      - name: Check if outputs exist
+        run: |
+          echo "Host URL: ${{ steps.terraform.outputs.HOST_URL }}"
+          echo "Federation manifest exists: $([ -f /tmp/federation-manifest.json ] && echo 'Yes' || echo 'No')"
+
+          # If no outputs (first run), use defaults or fail
+          if [ -z "${{ steps.terraform.outputs.HOST_URL }}" ]; then
+            echo "⚠️ No infrastructure found. This is the first deployment."
+            echo "Infrastructure was just created. Run the workflow again to deploy the app."
+            exit 1
+          fi
+
+      - name: Generate federation manifest
+        if: steps.terraform.outputs.HOST_URL != ''
         run: |
           mkdir -p projects/host-app/src/assets
-          cp /tmp/federation-manifest.json projects/host-app/src/assets/federation.manifest.json
+          if [ -f /tmp/federation-manifest.json ] && [ -s /tmp/federation-manifest.json ]; then
+            cp /tmp/federation-manifest.json projects/host-app/src/assets/federation.manifest.json
+          else
+            # Fallback manifest (you'll need to update these URLs after first terraform apply)
+            cat > projects/host-app/src/assets/federation.manifest.json << EOF
+            {
+              "app-list": "https://example.com/remoteEntry.json",
+              "app-workspace": "https://example.com/remoteEntry.json",
+              "actor-app": "https://example.com/remoteEntry.json",
+              "app-edit": "https://example.com/remoteEntry.json",
+              "home-app": "https://example.com/remoteEntry.json",
+              "app-parser": "https://example.com/remoteEntry.json"
+            }
+            EOF
+          fi
+
           cat projects/host-app/src/assets/federation.manifest.json | jq '.'
 
       - name: Build Angular applications
+        if: steps.terraform.outputs.HOST_URL != ''
         run: |
           if npx ng build shared-utils --configuration=production 2>/dev/null; then
             echo "✅ shared-utils built"
@@ -98,18 +114,25 @@ jobs:
           done
 
       - name: Deploy to S3
+        if: steps.terraform.outputs.HOST_URL != ''
         run: |
           aws s3 sync "dist/host-app/browser/" "s3://${{ steps.terraform.outputs.HOST_BUCKET }}/" --delete
-          cat /tmp/remote-buckets.json | jq -r 'to_entries[] | "\(.key) \(.value)"' | while read app bucket; do
-            if [ -d "dist/${app}/browser" ]; then
-              aws s3 sync "dist/${app}/browser/" "s3://${bucket}/" --delete
-            fi
-          done
 
-      - name: Output deployment URLs
+          # Deploy remote apps
+          if [ -f /tmp/remote-buckets.json ]; then
+            cat /tmp/remote-buckets.json | jq -r 'to_entries[] | "\(.key) \(.value)"' 2>/dev/null | while read app bucket; do
+              if [ -d "dist/${app}/browser" ]; then
+                aws s3 sync "dist/${app}/browser/" "s3://${bucket}/" --delete
+              fi
+            done
+          fi
+
+      - name: Invalidate CloudFront cache
+        if: steps.terraform.outputs.HOST_URL != ''
         run: |
-          echo "=========================================="
-          echo "✅ Deployment Complete!"
-          echo "=========================================="
-          echo "Host URL: ${{ steps.terraform.outputs.HOST_URL }}"
-          echo "=========================================="
+          cd terraform
+          CF_IDS=$(terraform output -json cloudfront_distribution_ids 2>/dev/null || echo "{}")
+          HOST_CF_ID=$(echo "$CF_IDS" | jq -r '.host')
+          if [ -n "$HOST_CF_ID" ] && [ "$HOST_CF_ID" != "null" ]; then
+            aws cloudfront create-invalidation --distribution-id "$HOST_CF_ID" --paths "/*" --no-cli-pager
+          fi
