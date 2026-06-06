@@ -83,12 +83,12 @@ jobs:
       - name: Generate federation manifest
         if: steps.terraform.outputs.HOST_URL != ''
         run: |
-          mkdir -p projects/host-app/src/assets
+          mkdir -p projects/host-app/public
           if [ -f /tmp/federation-manifest.json ] && [ -s /tmp/federation-manifest.json ]; then
-            cp /tmp/federation-manifest.json projects/host-app/src/assets/federation.manifest.json
+            cp /tmp/federation-manifest.json projects/host-app/public/federation.manifest.json
           else
             # Fallback manifest (you'll need to update these URLs after first terraform apply)
-            cat > projects/host-app/src/assets/federation.manifest.json << EOF
+            cat > projects/host-app/public/federation.manifest.json << EOF
             {
               "app-list": "https://example.com/remoteEntry.json",
               "app-workspace": "https://example.com/remoteEntry.json",
@@ -100,7 +100,7 @@ jobs:
             EOF
           fi
 
-          cat projects/host-app/src/assets/federation.manifest.json | jq '.'
+          cat projects/host-app/public/federation.manifest.json | jq '.'
 
       - name: Build Angular applications
         if: steps.terraform.outputs.HOST_URL != ''
