@@ -118,34 +118,7 @@ data "aws_iam_policy_document" "remote_s3_policy" {
   }
 }
 
-# Response headers policy for CORS
-resource "aws_cloudfront_response_headers_policy" "cors_policy" {
-  name    = "mfe-cors-policy-${var.environment}"
-  comment = "CORS policy for MFE applications"
-
-  cors_config {
-    access_control_allow_credentials = false
-
-    access_control_allow_headers {
-      items = ["*"]
-    }
-
-    access_control_allow_methods {
-      items = ["GET", "HEAD", "OPTIONS"]
-    }
-
-    access_control_allow_origins {
-      items = ["*"]
-    }
-
-    access_control_expose_headers {
-      items = ["ETag", "Content-Length", "Content-Type", "Date"]
-    }
-
-    access_control_max_age_sec = 3600
-    origin_override            = true
-  }
-}
+ 
 
 # CloudFront distribution for Host App
 resource "aws_cloudfront_distribution" "host_distribution" {
@@ -183,9 +156,7 @@ resource "aws_cloudfront_distribution" "host_distribution" {
     default_ttl            = 3600
     max_ttl                = 86400
     compress               = true
-    
-    # Attach the CORS policy
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors_policy.id
+     
   }
 
   custom_error_response {
