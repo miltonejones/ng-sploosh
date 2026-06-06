@@ -71,6 +71,12 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Verify AWS ARN
+      - name: Verify AWS ARN
+        run: |
+
+          echo "AWS ARN: ✅ ${{ secrets.AWS_ROLE_ARN }}"
+
       # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
