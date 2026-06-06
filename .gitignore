@@ -222,14 +222,7 @@ config.local.js
 local.config.ts
 *.local.json
 *.local.js
-
-# ============================================
-# Package Manager Specific
-# ============================================
-
-# npm
-package-lock.json
-npm-shrinkwrap.json
+ 
 
 # yarn
 .yarn/
