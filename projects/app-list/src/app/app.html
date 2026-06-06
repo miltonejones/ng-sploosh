@@ -1,0 +1,47 @@
+<div
+  class="offcanvas offcanvas-start"
+  [class.show]="open()"
+  tabindex="-1"
+  id="offcanvas"
+  aria-labelledby="offcanvasLabel"
+>
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasLabel">Saved searches</h5>
+    <button
+      type="button"
+      class="btn-close"
+      (click)="closeWindow()"
+      data-bs-dismiss="offcanvas"
+      aria-label="Close"
+    ></button>
+  </div>
+  <div class="offcanvas-body">
+    <ul class="list-group mb-1">
+      @if (persisted.pinned.length > 0) {
+      <b>Pinned Searches</b>
+      @for(item of persisted.pinned; track item) {
+      <li class="list-group-item" [class.active]="item === searchParam()">
+        <div class="item-link">
+          <a href="/find/{{ item }}/1">{{ item }}</a>
+        </div>
+        <i (click)="unpinSearch(item)" class="fa-solid fa-thumbtack"></i>
+        <i class="fa-solid fa-trash"></i>
+      </li>
+      } }
+    </ul>
+
+    <ul class="list-group">
+      <b>Saved Searches</b>
+      @for(item of persisted.unpinned; track item) {
+      <li class="list-group-item" [class.active]="item === searchParam()">
+        <div class="item-link">
+          <a href="/find/{{ item }}/1">{{ item }}</a>
+        </div>
+
+        <i (click)="pinSearch(item)" class="fa-solid fa-thumbtack"></i>
+        <i class="fa-solid fa-trash"></i>
+      </li>
+      }
+    </ul>
+  </div>
+</div>

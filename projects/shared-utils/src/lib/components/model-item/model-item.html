@@ -1,0 +1,7 @@
+<div class="d-flex gap-1 whitespace-nowrap" (click)="handleSelect(model()!)">
+  @if (!error()) {
+
+  <img [src]="model()?.image" (error)="setError()" />
+  }
+  {{ model()?.Name || model()?.name }}
+</div>

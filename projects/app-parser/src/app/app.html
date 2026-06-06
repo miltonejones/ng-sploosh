@@ -1,0 +1,24 @@
+<div class="parser-body card" [class.on]="!!video()">
+  {{ status() }}
+  <div
+    class="d-flex gap-1 box"
+    [class.one]="video()?.models?.length === 1"
+    [class.two]="video()?.models?.length === 2"
+    [class.three]="video()?.models?.length === 3"
+  >
+    @if(video()) {
+    <div class="video-container">
+      <div class="video-photo" [libImageSource]="video()?.image"></div>
+      <div class="video-title">
+        {{ video()?.title }}
+      </div>
+    </div>
+
+    <div class="model-info d-flex gap-1">
+      @for(star of video()?.models;track star.ID) {
+      <app-model-card [model]="star"></app-model-card>
+      }
+    </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,15 @@
+img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+div {
+  cursor: pointer;
+}
+
+.whitespace-nowrap {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}

@@ -1,0 +1,39 @@
+<div class="card">
+  <!-- <img [src]="track()?.image" class="card-img-top" alt="..." /> -->
+  <div
+    class="card-photo"
+    (click)="setOpen()"
+    [appImageSource]="track()?.image"
+    [title]="track()?.title"
+    [class.visited]="visited()"
+  >
+    <lib-window-region
+      [launched]="launched()"
+      [width]="180"
+      [height]="105"
+      (select)="selectRegion($event)"
+      [open]="isOpen()"
+    ></lib-window-region>
+  </div>
+  <div class="card-body">
+    <div class="card-marquee">
+      <div class="card-info d-flex align-items-center">
+        <app-actor-menu
+          [selectedId]="actorId()"
+          (modelSelect)="selectModel($event)"
+          (modelDedupe)="dedupeModel($event)"
+          [models]="actors"
+        ></app-actor-menu>
+        <div
+          class="card-title"
+          [title]="track()?.title"
+          [class.wide]="isWide"
+          [class.favorite]="track()?.favorite"
+        >
+          {{ track()?.title }}
+        </div>
+        <lib-dropmenu (itemClicked)="handleMenuClick($event)" [items]="items"></lib-dropmenu>
+      </div>
+    </div>
+  </div>
+</div>

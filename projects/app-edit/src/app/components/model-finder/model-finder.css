@@ -1,0 +1,11 @@
+.modal-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+li {
+  cursor: pointer;
+}
+legend {
+  font-size: 1rem;
+}

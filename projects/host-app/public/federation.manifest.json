@@ -1,0 +1,8 @@
+{
+  "app-list": "http://localhost:4201/remoteEntry.json",
+  "app-workspace": "http://localhost:4202/remoteEntry.json",
+  "actor-app": "http://localhost:4203/remoteEntry.json",
+  "app-edit": "http://localhost:4204/remoteEntry.json",
+  "home-app": "http://localhost:4205/remoteEntry.json",
+  "app-parser": "http://localhost:4206/remoteEntry.json"
+}

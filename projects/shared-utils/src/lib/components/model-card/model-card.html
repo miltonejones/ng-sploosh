@@ -1,0 +1,8 @@
+<div class="card" (click)="selectModel(model()!)" [class.small]="size() === 'sm'">
+  <img [src]="source()" (error)="setErrorImage()" [title]="model()?.name" />
+  <div class="card-title">
+    {{ model()?.name }} @if(!!model()?.FaveCount) {
+    <span>({{ model()?.FaveCount }})</span>
+    }
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<div class="input-group">
+  <div class="input-group-prepend">
+    <div class="dropdown" [class.show]="aliases().length">
+      <!-- 2. Set aria-expanded to true -->
+      <button
+        class="btn btn-sm dropdown-toggle"
+        type="button"
+        id="myDropdownButton"
+        data-bs-toggle="dropdown"
+        aria-expanded="true"
+      >
+        <!-- @ -->
+      </button>
+
+      <!-- 3. Add "show" to the dropdown menu element -->
+      <ul
+        class="dropdown-menu"
+        [class.show]="aliases().length || options.length"
+        aria-labelledby="myDropdownButton"
+      >
+        @for(option of options; track option.key) {
+        <li class="d-flex justify-content-between m-1" (click)="handleOption(option)">
+          {{ option.label }}
+        </li>
+        } @for(alias of aliases();track alias.ID) {
+        <li class="p-1">
+          <!-- <a class="dropdown-item" href="javascript:void(0)">{{ alias.name }}</a> -->
+          <lib-model-item (select)="addModel($event)" [model]="alias"></lib-model-item>
+        </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <input
+    #inputField
+    type="text"
+    class="form-control form-control-sm"
+    placeholder="Type a model name"
+    [(ngModel)]="paramParam"
+    (keyup)="modelSearch()"
+  />
+  @if(paramParam) {
+  <div class="input-group-append" (click)="clearParam()">
+    <span class="input-group-text" id="basic-addon2">&times;</span>
+  </div>
+
+  }
+</div>

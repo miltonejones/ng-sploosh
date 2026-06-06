@@ -1,0 +1,52 @@
+<div
+  class="offcanvas offcanvas-start"
+  [class.show]="open()"
+  tabindex="-1"
+  id="offcanvas"
+  aria-labelledby="offcanvasLabel"
+>
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasLabel">Edit Video</h5>
+    <button
+      type="button"
+      class="btn-close"
+      (click)="closeWindow()"
+      data-bs-dismiss="offcanvas"
+      aria-label="Close"
+    ></button>
+  </div>
+  <div class="offcanvas-body">
+    <div class="video-photo" [libImageSource]="video()?.image"></div>
+
+    <div class="video-title">
+      {{ video()?.title }}
+    </div>
+    <hr />
+    Models:
+    <ul>
+      @for(star of video()?.models; track star.ID) {
+      <li class="d-flex justify-content-between m-1">
+        <lib-model-item [model]="star"></lib-model-item>
+
+        <button (click)="handleDrop(star)" class="btn btn-sm">
+          <i class="fa-regular fa-trash-can"></i>
+        </button>
+      </li>
+      }
+      <!-- 
+      <li>
+        <a href="javascript:void(0)" (click)="showSearchModal()">Add models</a>
+      </li> -->
+    </ul>
+
+    <app-model-dropdown
+      (optionClick)="handleOption($event)"
+      (modelAdded)="handleStar($event)"
+    ></app-model-dropdown>
+  </div>
+</div>
+
+<app-model-finder
+  (optionClick)="handleOption($event)"
+  (select)="handleStar($event)"
+></app-model-finder>

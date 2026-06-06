@@ -1,0 +1,28 @@
+<div class="actor-menu">
+  @if (!models() || models()!.length > 0) { @if (models()!.length > 1) {
+  <div class="dropdown">
+    <a class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      <lib-model-avatar size="sm" [model]="models()[0]"></lib-model-avatar>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-dark">
+      @for(actor of models(); track actor.ID) {
+      <app-actor-menu-item
+        [actor]="actor"
+        [models]="models()"
+        [selectedId]="selectedId()"
+        (select)="selectModel($event)"
+        (dedupe)="dedupeModel($event)"
+      ></app-actor-menu-item>
+      <!-- <li
+        class="m-1 dropdown-item"
+        [class.active]="actor.ID === selectedId()"
+        (click)="selectModel(actor)"
+      >
+        {{ actor.name }}
+      </li> -->
+      }
+    </ul>
+  </div>
+
+  } }
+</div>

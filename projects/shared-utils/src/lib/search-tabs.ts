@@ -1,0 +1,16 @@
+export const searchTabs = [
+  { param: 'caba|pub |pinsa', type: 'search' },
+  { param: 'cm , 13| 14', type: 'search' },
+  { param: 'english|engsub|subbed|subtitle|javsub', type: 'search' },
+  { param: 'school,after|before|pre', type: 'search' },
+  { param: 'debt|repay| sell | sold', type: 'search' },
+  { param: 'school,train| bus |molest', type: 'search' },
+  { param: 'caba|pub |pinsa|titty bar|hostess', type: 'search' },
+  { param: 'insert,mass|secret|allow|pub |pinsaro', type: 'search' },
+  { param: 'SW-', type: 'search' },
+  { param: 'Sister,panti|panch|panty shot|pantyshot', type: 'search' },
+  { param: 'mom |mother|stepson', type: 'search' },
+  { param: 'dad|papa|daught|father', type: 'search' },
+  { type: 'search', param: 'gOd,29' },
+  { type: 'search', param: 'NGod' },
+];

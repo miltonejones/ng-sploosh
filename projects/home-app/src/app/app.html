@@ -1,0 +1,95 @@
+<!-- <div class="d-flex justify-content-between align-items-center banner">
+  <b>Recently Watched</b>
+  <button class="btn btn-sm" (click)="expand('recent')">View all</button>
+</div>
+
+<div class="film-grid">
+  @for(film of firstRecent();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } @if(expanded().recent) { @for(film of remainingRecent();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } }
+</div> -->
+
+<app-home-grid
+  label="Recently Watched"
+  [videos]="recents()"
+  (videoSelect)="launchVideo($event)"
+  (modelSelect)="selectModelById($event)"
+></app-home-grid>
+
+<div class="d-flex justify-content-between align-items-center banner">
+  <b>Top Models</b>
+  <button class="btn btn-sm" (click)="expand('models')">View all</button>
+</div>
+<div class="model-grid">
+  @for(star of models();track star.ID) {
+  <app-model-card [model]="star" (select)="selectModel($event)"></app-model-card>
+  } @if(expanded().models) { @for(star of remaining();track star.ID) {
+  <app-model-card [model]="star" (select)="selectModel($event)"></app-model-card>
+  } }
+</div>
+
+<!-- <div class="d-flex justify-content-between align-items-center banner">
+  <b>Favorites</b>
+  <button class="btn btn-sm" (click)="expand('faves')">View all</button>
+</div>
+
+<div class="film-grid">
+  @for(film of firstFavorites();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } @if(expanded().faves) { @for(film of remainingFavorites();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } }
+</div> -->
+
+<app-home-grid
+  label="Favorites"
+  [videos]="favorites()"
+  (videoSelect)="launchVideo($event)"
+  (modelSelect)="selectModelById($event)"
+></app-home-grid>
+
+<app-home-grid
+  label="Latest Added"
+  [videos]="latest()"
+  (videoSelect)="launchVideo($event)"
+  (modelSelect)="selectModelById($event)"
+></app-home-grid>
+<!-- 
+<div class="d-flex justify-content-between align-items-center banner">
+  <b>Latest Added</b>
+  <button class="btn btn-sm" (click)="expand('latest')">View all</button>
+</div>
+
+<div class="film-grid">
+  @for(film of firstLatest();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } @if(expanded().latest) { @for(film of remainingLatest();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } }
+</div> -->

@@ -1,0 +1,46 @@
+<!-- Modal -->
+<div
+  class="modal fade"
+  id="starFinderModal"
+  tabindex="-1"
+  aria-labelledby="starFinderModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="starFinderModalLabel">Find models</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input
+          class="form-control form-control-sm"
+          (keyup)="checkParam()"
+          (mouseup)="checkParam()"
+          [(ngModel)]="searchParam"
+          #inputField
+          placeholder="Type a model name"
+        />
+
+        @if (options.length || stars().length) {
+        <fieldset class="p-1">
+          <legend>Choose model</legend>
+
+          @for(option of options; track option.key) {
+          <li class="d-flex justify-content-between m-1" (click)="handleOption(option)">
+            {{ option.label }}
+          </li>
+          } @for(star of stars(); track star.ID) {
+          <li class="d-flex justify-content-between m-1">
+            <lib-model-item (select)="handleSelect($event)" [model]="star"></lib-model-item>
+          </li>
+          }
+        </fieldset>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

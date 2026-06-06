@@ -1,0 +1,36 @@
+.faux-dialog {
+  width: 400px;
+  position: fixed;
+  top: -500px;
+  transition: top 0.2s linear;
+  margin: 0px auto;
+}
+
+.faux-dialog.open {
+  top: 40px;
+}
+
+.message-photo {
+  width: 200px;
+  min-width: 132px;
+  aspect-ratio: 16 / 9;
+  background-size: 50% 100%;
+}
+
+.message-photo.small,
+td.small {
+  width: 100px;
+}
+
+.form-control {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.fullwidth {
+  width: 450px;
+}
+
+table {
+  width: 100%;
+}

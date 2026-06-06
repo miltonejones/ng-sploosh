@@ -1,0 +1,20 @@
+.card {
+  width: 200px;
+  cursor: pointer;
+}
+
+.card img {
+  width: 100%;
+  height: auto;
+}
+
+.card img {
+  display: block;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  object-fit: cover;
+  border-radius: 8px;
+  width: 200px;
+  aspect-ratio: 2.1 / 3;
+}

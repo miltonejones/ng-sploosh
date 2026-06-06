@@ -1,0 +1,50 @@
+<div class="card">
+  <!-- <img [src]="track()?.image" class="card-img-top" alt="..." /> -->
+  <div
+    class="card-photo"
+    [class.visited]="visited()"
+    (click)="setOpen()"
+    [libImageSource]="track()?.image"
+    [title]="track()?.title"
+  >
+    <lib-window-region
+      [launched]="launched()"
+      (select)="selectRegion($event)"
+      [open]="isOpen()"
+    ></lib-window-region>
+  </div>
+  <div class="card-body">
+    <div class="card-marquee">
+      @if(this.model?.image && !isWide) {
+      <div class="card-avatar">
+        <img [src]="this.model!.image" (error)="setWide(true)" />
+      </div>
+      }
+      <div class="card-info">
+        <div
+          class="card-title"
+          [class.favorite]="track()?.favorite"
+          [class.wide]="this.isWide || !this.model?.image"
+        >
+          {{ track()?.title }}
+        </div>
+        <div class="card-text">
+          <lib-actor-menu
+            (editClick)="handleEditClick()"
+            (getModelId)="selectModel($event)"
+            [models]="track()?.models"
+          ></lib-actor-menu>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-foot justify-content-between">
+      <div class="domain">
+        <a href="/domain/{{ track()?.domain }}/1">{{ track()?.domain }}</a>
+      </div>
+      <div class="track-key">
+        <lib-dropmenu (itemClicked)="handleMenuClick($event)" [items]="items"></lib-dropmenu>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,59 @@
+.card-photo {
+  width: 180px;
+  height: 100px;
+  background-size: 50% 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-photo.visited {
+  opacity: 0.5;
+}
+
+.card {
+  width: 180px;
+}
+
+.card-body {
+  padding: 0.2rem;
+}
+
+.favorite {
+  font-weight: 600;
+  color: red;
+}
+
+.card-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.card-avatar img {
+  width: 40px;
+}
+
+.card-marquee {
+  display: flex;
+  flex-direction: row;
+  gap: 0.2rem;
+}
+
+.card-title {
+  font-size: 0.9rem;
+  width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0;
+}
+
+.card-title.wide {
+  width: 140px;
+}
+
+.card-text {
+  display: flex;
+  flex-direction: row;
+}

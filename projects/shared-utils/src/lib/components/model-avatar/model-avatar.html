@@ -1,0 +1,8 @@
+<div
+  class="model-box"
+  (click)="handleClick()"
+  [class.active]="active()"
+  [class.small]="size() === 'sm'"
+>
+  <img [src]="source()" (error)="setErrorImage()" />
+</div>

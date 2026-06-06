@@ -1,0 +1,314 @@
+name: Deploy MFE to AWS
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+# Environment variables
+env:
+  NODE_VERSION: '20'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || 'staging') }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Determine environment
+      - name: Set environment
+        id: env
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" != "" ]]; then
+            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "ENVIRONMENT=prod" >> $GITHUB_OUTPUT
+          else
+            echo "ENVIRONMENT=staging" >> $GITHUB_OUTPUT
+          fi
+
+      # Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      # Terraform Init
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+        env:
+          TF_VAR_environment: ${{ steps.env.outputs.ENVIRONMENT }}
+
+      # Terraform Apply (get CloudFront URLs)
+      - name: Terraform Apply
+        id: terraform
+        run: |
+          cd terraform
+          terraform apply -auto-approve \
+            -var="environment=${{ steps.env.outputs.ENVIRONMENT }}"
+
+          # Save outputs for later steps
+          echo "HOST_URL=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
+          echo "HOST_BUCKET=$(terraform output -raw host_s3_bucket_name)" >> $GITHUB_OUTPUT
+          terraform output -json federation_manifest > /tmp/federation-manifest.json
+          terraform output -json remote_s3_bucket_names > /tmp/remote-buckets.json
+        env:
+          TF_VAR_environment: ${{ steps.env.outputs.ENVIRONMENT }}
+
+      # Generate production federation manifest
+      - name: Generate production federation manifest
+        run: |
+          echo "📝 Generating production federation manifest..."
+
+          # Create assets directory if it doesn't exist
+          mkdir -p projects/public/assets
+
+          # Copy the Terraform-generated manifest to the Angular project
+          cp /tmp/federation-manifest.json projects/public/assets/federation.manifest.json
+
+          # Also create a backup with environment name
+          cp /tmp/federation-manifest.json "projects/public/assets/federation.manifest.${{ steps.env.outputs.ENVIRONMENT }}.json"
+
+          echo "✅ Federation manifest generated:"
+          cat projects/public/assets/federation.manifest.json | jq '.'
+
+      # Update environment.ts files with production URLs
+      - name: Update environment files
+        run: |
+          echo "🔧 Updating environment files with production URLs..."
+
+          HOST_URL="${{ steps.terraform.outputs.HOST_URL }}"
+
+          # Update environment.prod.ts
+          cat > projects/public/environments/environment.prod.ts << EOF
+          export const environment = {
+            production: true,
+            hostUrl: '${HOST_URL}',
+            federationManifestUrl: '${HOST_URL}/assets/federation.manifest.json',
+            apiUrl: '${HOST_URL}/api',
+            enableDebug: false
+          };
+          EOF
+
+          # Update environment.ts for production builds
+          cat > projects/public/environments/environment.ts << EOF
+          export const environment = {
+            production: true,
+            hostUrl: '${HOST_URL}',
+            federationManifestUrl: '${HOST_URL}/assets/federation.manifest.json',
+            apiUrl: '${HOST_URL}/api',
+            enableDebug: false
+          };
+          EOF
+
+          echo "✅ Environment files updated"
+
+      # Build Angular applications
+      - name: Build Angular applications
+        run: |
+          # Build shared-utils if exists
+          if npx ng build shared-utils --configuration=production 2>/dev/null; then
+            echo "✅ shared-utils built"
+          fi
+
+          # Build host app
+          echo "Building host-app..."
+          npx ng build host-app --configuration=production
+
+          # Build remote apps
+          echo "Building remote apps..."
+          for app in app-list app-workspace actor-app app-edit home-app app-parser; do
+            echo "  Building $app..."
+            npx ng build "$app" --configuration=production
+          done
+
+      # Verify manifest was included in build
+      - name: Verify manifest in build output
+        run: |
+          echo "🔍 Verifying manifest was included in build..."
+
+          if [ -f "dist/host-app/browser/assets/federation.manifest.json" ]; then
+            echo "✅ Manifest found in build output"
+            cat dist/host-app/browser/assets/federation.manifest.json | jq '.'
+          elif [ -f "dist/host-app/browser/federation.manifest.json" ]; then
+            echo "✅ Manifest found in build output root"
+            cat dist/host-app/browser/federation.manifest.json | jq '.'
+          else
+            echo "⚠️  Manifest not found in build output, copying it..."
+            cp /tmp/federation-manifest.json dist/host-app/browser/assets/federation.manifest.json
+          fi
+
+      # Deploy to S3
+      - name: Deploy to S3
+        run: |
+          echo "📤 Deploying to S3..."
+
+          # Deploy host app
+          echo "Deploying host app to ${{ steps.terraform.outputs.HOST_BUCKET }}..."
+          aws s3 sync "dist/host-app/browser/" "s3://${{ steps.terraform.outputs.HOST_BUCKET }}/" --delete
+
+          # Deploy remote apps
+          echo "Deploying remote apps..."
+          cat /tmp/remote-buckets.json | jq -r 'to_entries[] | "\(.key) \(.value)"' | while read app bucket; do
+            if [ -d "dist/${app}/browser" ]; then
+              echo "  Deploying $app to $bucket..."
+              aws s3 sync "dist/${app}/browser/" "s3://${bucket}/" --delete
+            fi
+          done
+
+          echo "✅ Deployment to S3 complete"
+
+      # Invalidate CloudFront cache
+      - name: Invalidate CloudFront cache
+        run: |
+          echo "🔄 Invalidating CloudFront cache..."
+
+          cd terraform
+          CF_IDS=$(terraform output -json cloudfront_distribution_ids 2>/dev/null || echo "{}")
+
+          # Invalidate host distribution
+          HOST_CF_ID=$(echo "$CF_IDS" | jq -r '.host')
+          if [ -n "$HOST_CF_ID" ] && [ "$HOST_CF_ID" != "null" ]; then
+            echo "Invalidating host CloudFront: $HOST_CF_ID"
+            aws cloudfront create-invalidation --distribution-id "$HOST_CF_ID" --paths "/*" --no-cli-pager
+          fi
+
+          # Invalidate remote distributions
+          echo "$CF_IDS" | jq -r '.remote | to_entries[] | .value' | while read cf_id; do
+            if [ -n "$cf_id" ] && [ "$cf_id" != "null" ]; then
+              echo "Invalidating remote CloudFront: $cf_id"
+              aws cloudfront create-invalidation --distribution-id "$cf_id" --paths "/*" --no-cli-pager
+            fi
+          done
+
+          cd ..
+
+      # Output deployment URLs
+      - name: Output deployment URLs
+        run: |
+          echo "=========================================="
+          echo "✅ Deployment Complete!"
+          echo "=========================================="
+          echo "Host URL: ${{ steps.terraform.outputs.HOST_URL }}"
+          echo ""
+          echo "Federation Manifest:"
+          cat /tmp/federation-manifest.json | jq '.'
+          echo ""
+          echo "To view your app: ${{ steps.terraform.outputs.HOST_URL }}"
+          echo "=========================================="
+
+      # Comment on PR (if PR deployment)
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hostUrl = '${{ steps.terraform.outputs.HOST_URL }}';
+            const manifest = require('/tmp/federation-manifest.json');
+
+            let manifestText = '```json\n' + JSON.stringify(manifest, null, 2) + '\n```';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 **Deployment Complete!**\n\n**Host URL:** ${hostUrl}\n\n**Federation Manifest:**\n${manifestText}\n\n**Environment:** ${{ steps.env.outputs.ENVIRONMENT }}\n\n**Status:** ✅ Successfully deployed`
+            });
+
+  # Smoke test job
+  smoke-test:
+    name: Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always() && needs.deploy.result == 'success'
+
+    steps:
+      - name: Wait for CloudFront propagation
+        run: sleep 30
+
+      - name: Get host URL from terraform output
+        id: urls
+        run: |
+          cd terraform
+          echo "HOST_URL=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
+          echo "HOST_BUCKET=$(terraform output -raw host_s3_bucket_name)" >> $GITHUB_OUTPUT
+
+      - name: Test host app
+        run: |
+          echo "Testing host app: ${{ steps.urls.outputs.HOST_URL }}"
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.HOST_URL }}" --max-time 10)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Host app is accessible (HTTP $HTTP_CODE)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE, waiting..."
+            sleep 10
+          done
+          echo "❌ Host app failed to respond with 200 after 10 attempts"
+          exit 1
+
+      - name: Test federation manifest
+        run: |
+          MANIFEST_URL="${{ steps.urls.outputs.HOST_URL }}/assets/federation.manifest.json"
+          echo "Testing manifest: $MANIFEST_URL"
+
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$MANIFEST_URL" --max-time 10)
+          if [ "$HTTP_CODE" != "200" ]; then
+            # Try root path as fallback
+            MANIFEST_URL="${{ steps.urls.outputs.HOST_URL }}/federation.manifest.json"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$MANIFEST_URL" --max-time 10)
+          fi
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Federation manifest accessible"
+            curl -s "$MANIFEST_URL" | jq '.'
+          else
+            echo "⚠️  Federation manifest not found (HTTP $HTTP_CODE)"
+          fi

@@ -1,0 +1,76 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "paths": {
+      "shared-utils": ["./dist/shared-utils"]
+    },
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve"
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/host-app/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/host-app/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/app-list/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/app-list/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/app-workspace/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/app-workspace/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/shared-utils/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/shared-utils/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/actor-app/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/actor-app/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/app-edit/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/app-edit/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/home-app/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/home-app/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/app-parser/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/app-parser/tsconfig.spec.json"
+    }
+  ]
+}

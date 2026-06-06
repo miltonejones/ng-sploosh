@@ -1,0 +1,30 @@
+.list-group-item {
+  padding: 0.2rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.item-link {
+  width: 100%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.list-group-item:hover .item-link {
+  width: 90%;
+}
+
+.list-group-item i {
+  display: none;
+}
+
+.list-group-item:hover i {
+  display: inline;
+  cursor: pointer;
+}
+
+.list-group-item.active a {
+  color: white;
+}

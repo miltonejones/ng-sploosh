@@ -1,0 +1,27 @@
+.model-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.model-box img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.model-box.small,
+.model-box.small img {
+  width: 24px;
+  height: 24px;
+}
+
+.model-box.active {
+  border: solid 2px red;
+}
+
+.model-box:hover {
+  border: solid 1px blue;
+}

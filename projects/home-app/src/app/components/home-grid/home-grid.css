@@ -1,0 +1,13 @@
+.film-grid {
+  width: 75%;
+  margin: 0px auto;
+  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  margin-bottom: 1rem;
+}
+
+.banner {
+  width: 75%;
+  margin: 0px auto;
+}

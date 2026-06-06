@@ -1,0 +1,11 @@
+<li
+  class="m-1 dropdown-item"
+  [class.active]="actor()?.ID === selectedId()"
+  (click)="selectModel(actor()!)"
+>
+  {{ actor()?.name }}
+</li>
+
+@if(duplicate()) {
+<li class="dropdown-item" (click)="dedupeModel(actor()!)">Remove duplicate</li>
+}

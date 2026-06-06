@@ -1,0 +1,22 @@
+<div class="actor-menu">
+  @if (!models() || models()!.length === 0) {
+  <i (click)="handleEdit()">add model</i>
+  } @else {
+  <a (click)="selectModel(models()![0])">{{ models()![0].Name }}</a>
+  @if (models()!.length > 1) {
+
+  <div class="dropdown">
+    <a class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      + {{ models()!.length - 1 }} more
+    </a>
+    <ul class="dropdown-menu dropdown-menu-dark">
+      @for(actor of models()!.slice(1); track actor.ID) {
+      <li class="m-1">
+        <lib-model-item (select)="selectModel($event)" [model]="actor"></lib-model-item>
+      </li>
+      }
+    </ul>
+  </div>
+
+  } }
+</div>

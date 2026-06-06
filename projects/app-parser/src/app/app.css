@@ -1,0 +1,39 @@
+.parser-body {
+  min-width: 400px;
+  /* border: solid 1px red; */
+  position: fixed;
+  bottom: -1000px;
+  right: 0px;
+  padding: 0.5rem;
+  background-color: white;
+  transition: bottom 0.4s linear;
+  z-index: 1000000 !important;
+}
+
+.parser-body.on {
+  bottom: 0px;
+}
+
+.video-photo {
+  width: 400px;
+  aspect-ratio: 16 / 9;
+  background-size: 50% 100%;
+}
+
+.box {
+  width: 400px;
+  transition: width 0.4s linear;
+  overflow: hidden;
+}
+
+.box.one {
+  width: 620px;
+}
+
+.box.two {
+  width: 840px;
+}
+
+.box.three {
+  width: 1060px;
+}

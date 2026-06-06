@@ -1,0 +1,24 @@
+@if (videos().length) {
+
+<div class="d-flex justify-content-between align-items-center banner">
+  <b>{{ label() }}</b>
+  <button class="btn btn-sm" (click)="expand()">View all</button>
+</div>
+
+<div class="film-grid">
+  @for(film of first();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } @if(expanded()) { @for(film of remaining();track film.ID) {
+  <lib-track-card
+    [track]="film"
+    (modelSelect)="selectModelById($event)"
+    (regionSelect)="openVideo($event, film)"
+  ></lib-track-card>
+  } }
+</div>
+
+}

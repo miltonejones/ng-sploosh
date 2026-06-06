@@ -1,0 +1,10 @@
+li {
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  max-height: 300px;
+  width: 368px;
+  overflow-y: scroll;
+}

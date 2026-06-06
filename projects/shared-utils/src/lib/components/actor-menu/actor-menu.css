@@ -1,0 +1,29 @@
+a.dropdown-toggle {
+  font-size: 0.8rem;
+}
+
+.actor-menu {
+  display: flex;
+  flex-direction: row;
+  font-size: 0.9rem;
+  gap: 0.2rem;
+}
+
+a {
+  cursor: pointer;
+}
+
+.star-image {
+  width: 100px;
+}
+
+i:hover {
+  text-decoration: underline;
+}
+
+i {
+  color: red;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}

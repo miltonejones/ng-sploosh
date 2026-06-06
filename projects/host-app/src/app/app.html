@@ -1,0 +1,34 @@
+<header>
+  <app-toolbar (menuClick)="openMenu()"></app-toolbar>
+</header>
+
+<app-mfe-anchor remoteName="app-edit" exposedModule="./Component" />
+<app-mfe-anchor remoteName="app-list" exposedModule="./Component" />
+
+<main class="dashboard-grid">
+  <section class="workspace">
+    <router-outlet />
+  </section>
+</main>
+
+<app-mfe-anchor remoteName="actor-app" exposedModule="./Component" />
+<app-mfe-anchor remoteName="app-parser" exposedModule="./Component" />
+
+<div class="snack-container" (mouseenter)="setHidden(false)" (mouseleave)="setHidden(true)">
+  @for(item of menu; track $index) {
+  <div
+    class="snack-button"
+    (click)="handleMenu(item.key)"
+    [style.bottom]="$index * 48 + 116 + 'px'"
+  >
+    <i class="{{ item.icon }}"></i>
+  </div>
+  }
+
+  <div class="add-button">
+    <button class="btn btn-sm" (click)="handleAddVideo()">
+      <i class="fa fa-plus"></i>
+    </button>
+  </div>
+</div>
+<lib-modal-box></lib-modal-box>

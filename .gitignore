@@ -1,0 +1,322 @@
+# ============================================
+# Angular / Node.js
+# ============================================
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# npm / yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Build outputs
+dist/
+tmp/
+out-tsc/
+build/
+coverage/
+
+# Angular cache
+.angular/
+.ngcache/
+.angular/cache
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.bak
+
+# ============================================
+# Terraform
+# ============================================
+
+# Local .terraform directories
+**/.terraform/
+**/.terraform.*
+.terraform/
+.terraform.lock.hcl
+
+# Terraform state files
+**/*.tfstate
+**/*.tfstate.*
+*.tfstate
+*.tfstate.*
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfstate.lock.info
+
+# Terraform plan files
+**/*.tfplan
+*.tfplan
+tfplan
+terraform.plan
+
+# Terraform override files
+**/override.tf
+**/override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI configuration files
+.terraformrc
+terraform.rc
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files (they may contain sensitive data)
+**/*.tfvars
+*.tfvars
+terraform.tfvars
+terraform.tfvars.json
+
+# Ignore temporary files
+**/*.backup
+**/*.backup.*
+**/*.tmp
+**/*.temp
+**/temp/
+**/tmp/
+
+# ============================================
+# AWS / CloudFront
+# ============================================
+
+# AWS CLI cache
+.aws/
+
+# CloudFront policy files (generated)
+/tmp/cors-policy.json
+/tmp/host-bucket-policy.json
+/tmp/remote-bucket-policy.json
+/tmp/dist-config*.json
+
+# S3 sync temporary files
+*.s3sync
+.s3tmp/
+
+# ============================================
+# Angular MFE Specific
+# ============================================
+
+# Federation manifest backup files
+projects/host-app/src/assets/federation.manifest.*.json
+projects/host-app/src/assets/federation.manifest.backup-*.json
+
+# Remote entry backup files
+**/remoteEntry.json.backup
+**/remoteEntry.json.*
+
+# Generated environment files
+projects/*/src/environments/environment.prod.ts
+projects/*/src/environments/environment.staging.ts
+!projects/*/src/environments/environment.prod.ts.example
+!projects/*/src/environments/environment.staging.ts.example
+
+# Build analysis files
+stats.json
+stats-*.json
+webpack-stats.json
+webpack-bundle-analyzer.json
+
+# ============================================
+# Deployment / Scripts output
+# ============================================
+
+# Deployment logs
+deploy-*.log
+terraform-apply.log
+terraform-plan.log
+*.log
+
+# Deployment temporary files
+/deployment-backups/
+/deployment-temp/
+/scripts/tmp/
+/tmp/
+
+# Generated scripts output
+/terraform-outputs.json
+/remote_buckets.txt
+/host_bucket.txt
+/tmp/terraform_outputs.txt
+
+# ============================================
+# Testing
+# ============================================
+
+# Unit test coverage
+/coverage/
+/coverage-*
+/coverage-summary.json
+
+# Jest / Karma
+/test-reports/
+/test-results/
+/screenshots/
+/__screenshots__/
+
+# Playwright / Cypress
+/playwright-report/
+/cypress/videos/
+/cypress/screenshots/
+/cypress/downloads/
+
+# ============================================
+# Secrets and Configuration
+# ============================================
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+.secrets/
+secrets.json
+.secrets.json
+*.secret.*
+**/*.secret.*
+
+# Service account keys
+*.json.key
+*.json.private
+*-key.json
+*service-account*.json
+
+# GitHub Actions secrets (don't commit examples)
+!.github/workflows/*.yml
+.github/*.secrets
+.github/secrets/
+
+# Local configuration overrides
+config.local.json
+config.local.js
+local.config.ts
+*.local.json
+*.local.js
+
+# ============================================
+# Package Manager Specific
+# ============================================
+
+# npm
+package-lock.json
+npm-shrinkwrap.json
+
+# yarn
+.yarn/
+.yarnrc
+.yarnrc.yml
+yarn.lock
+.yarn-integrity
+
+# pnpm
+pnpm-lock.yaml
+pnpm-store/
+
+# ============================================
+# Misc
+# ============================================
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+Dockerfile.local
+*.dockerignore
+
+# VS Code specific
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.code-workspace
+
+# IntelliJ / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.vimrc
+*.vim
+*.swp
+*.swo
+*~
+
+# Windows
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+.directory
+*.part
+*.bak
+
+# ============================================
+# Angular CLI / Native Federation Specific
+# ============================================
+
+# Native Federation generated files
+**/federation-config.json
+**/.federation/
+
+# Angular CLI cache
+.cli/
+.cli-config.json
+
+# Webpack temporary files
+**/webpack/
+**/.webpack/
+
+# ============================================
+# Documentation build outputs
+# ============================================
+
+/docs/_build/
+/docs/.build/
+/docs/api/
+/compodoc/
+/documentation/
+/storybook-static/
