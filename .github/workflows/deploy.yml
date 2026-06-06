@@ -56,11 +56,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.11.1  # Updated version with new GPG keys
+          terraform_version: 1.11.1 # Updated version with new GPG keys
 
       # Get existing CloudFront URLs without running terraform apply
       - name: Get existing infrastructure outputs
@@ -78,7 +78,7 @@ jobs:
           terraform output -json federation_manifest > /tmp/federation-manifest.json
           terraform output -json remote_s3_bucket_names > /tmp/remote-buckets.json
         env:
-          TF_DISABLE_SIGNATURE_VERIFICATION: '1'z
+          TF_DISABLE_SIGNATURE_VERIFICATION: '1'
 
       # Rest of your workflow continues...
       - name: Generate production federation manifest
