@@ -54,6 +54,58 @@ jobs:
             echo "ENVIRONMENT=staging" >> $GITHUB_OUTPUT
           fi
 
+      - name: Debug AWS Secrets (Safe Check)
+        run: |
+          echo "=========================================="
+          echo "🔍 Checking AWS Secrets Configuration"
+          echo "=========================================="
+
+          # Check if secrets exist (without exposing full values)
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            AWS_KEY_LENGTH=$(echo -n "${{ secrets.AWS_ACCESS_KEY_ID }}" | wc -c)
+            AWS_KEY_PREFIX=$(echo -n "${{ secrets.AWS_ACCESS_KEY_ID }}" | cut -c1-4)
+            echo "✅ AWS_ACCESS_KEY_ID is set (Length: $AWS_KEY_LENGTH chars, Prefix: ${AWS_KEY_PREFIX}***)"
+          else
+            echo "❌ AWS_ACCESS_KEY_ID is NOT set"
+            exit 1
+          fi
+
+          if [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            AWS_SECRET_LENGTH=$(echo -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" | wc -c)
+            echo "✅ AWS_SECRET_ACCESS_KEY is set (Length: $AWS_SECRET_LENGTH chars)"
+          else
+            echo "❌ AWS_SECRET_ACCESS_KEY is NOT set"
+            exit 1
+          fi
+
+          if [ -n "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "✅ AWS_ROLE_ARN is set: ${{ secrets.AWS_ROLE_ARN }}"
+          else
+            echo "⚠️  AWS_ROLE_ARN is not set (not needed for access keys method)"
+          fi
+
+          echo ""
+          echo "Expected formats:"
+          echo "  - AWS_ACCESS_KEY_ID: Should start with 'AKIA' and be 20 characters"
+          echo "  - AWS_SECRET_ACCESS_KEY: Should be 40 characters"
+          echo ""
+
+          # Validate key formats
+          if [[ "${{ secrets.AWS_ACCESS_KEY_ID }}" =~ ^AKIA[0-9A-Z]{16}$ ]]; then
+            echo "✅ AWS_ACCESS_KEY_ID format looks correct"
+          else
+            echo "⚠️  AWS_ACCESS_KEY_ID format may be incorrect. Should start with 'AKIA' and be 20 characters total"
+          fi
+
+          if [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            AWS_SECRET_LEN=$(echo -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" | wc -c)
+            if [ $AWS_SECRET_LEN -eq 40 ]; then
+              echo "✅ AWS_SECRET_ACCESS_KEY length looks correct (40 chars)"
+            else
+              echo "⚠️  AWS_SECRET_ACCESS_KEY length is $AWS_SECRET_LEN chars, expected 40 chars"
+            fi
+          fi
+
       # Configure AWS credentials with Access Keys (simpler)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
