@@ -106,6 +106,38 @@ jobs:
             fi
           fi
 
+      - name: Debug AWS Secrets (Detailed)
+        run: |
+          echo "=========================================="
+          echo "🔍 Detailed AWS Secrets Check"
+          echo "=========================================="
+
+          # Check AWS_ACCESS_KEY_ID
+          if [ -n "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
+            echo "AWS_ACCESS_KEY_ID: ${KEY_ID:0:4}...${KEY_ID: -4}"
+            echo "Length: ${#KEY_ID}"
+            # Check for hidden characters
+            echo "Hex dump (first 4 chars):"
+            echo -n "$KEY_ID" | head -c 4 | xxd
+          fi
+
+          # Check AWS_SECRET_ACCESS_KEY
+          if [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            SECRET="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+            echo "AWS_SECRET_ACCESS_KEY: ${SECRET:0:4}...${SECRET: -4}"
+            echo "Length: ${#SECRET}"
+            # Check for hidden characters
+            echo "Hex dump (first 4 chars):"
+            echo -n "$SECRET" | head -c 4 | xxd
+          fi
+
+          echo ""
+          echo "Expected:"
+          echo "  - Access Key ID should be 20 chars total, starting with AKIA"
+          echo "  - Secret Key should be 40 chars total"
+          echo "  - No spaces, newlines, or special characters"
+
       # Configure AWS credentials with Access Keys (simpler)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
