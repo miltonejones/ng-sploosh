@@ -39,3 +39,12 @@ output "federation_manifest" {
     k => "${v.website_endpoint}remoteEntry.json"
   }
 }
+
+# Add this output for CloudFront distribution IDs
+output "cloudfront_distribution_ids" {
+  description = "CloudFront distribution IDs for cache invalidation"
+  value = var.enable_cloudfront ? {
+    host = aws_cloudfront_distribution.host_distribution[0].id
+    remote = { for k, v in aws_cloudfront_distribution.remote_distributions : k => v.id }
+  } : null
+}
