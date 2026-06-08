@@ -80,6 +80,8 @@ jobs:
           cd terraform_clean
           terraform init -input=false
 
+          terraform refresh
+
           # Get outputs
           echo "host_url=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
           echo "host_bucket=$(terraform output -raw host_bucket_name)" >> $GITHUB_OUTPUT
