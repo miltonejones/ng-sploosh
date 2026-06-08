@@ -66,6 +66,13 @@ jobs:
         with:
           terraform_version: 1.11.1
 
+      - name: Apply Terraform (if needed)
+        run: |
+          cd terraform_clean
+          # Apply if infrastructure doesn't exist
+          terraform apply -auto-approve || true
+        continue-on-error: true
+
       - name: Get infrastructure outputs
         id: infra
         run: |
