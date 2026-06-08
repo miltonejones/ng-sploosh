@@ -1,84 +1,35 @@
 #!/bin/bash
 
-echo "🔧 Fixing S3 bucket permissions for MFE..."
+cd terraform_clean
 
-cd terraform
+HOST_DIST_ID=$(terraform output -raw host_distribution_id)
+HOST_BUCKET=$(terraform output -raw host_bucket_name)
 
-# Get all bucket names
-HOST_BUCKET=$(terraform output -raw host_s3_bucket_name 2>/dev/null)
-REMOTE_BUCKETS=$(terraform output -json remote_s3_bucket_names 2>/dev/null | jq -r '.[]')
-
-# Fix function
-fix_bucket() {
-    local BUCKET=$1
-    echo "📦 Fixing: $BUCKET"
-    
-    # 1. Remove block public access
-    aws s3api put-public-access-block \
-        --bucket $BUCKET \
-        --public-access-block-configuration \
-            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false" \
-        2>/dev/null || true
-    
-    # 2. Set ownership
-    aws s3api put-bucket-ownership-controls \
-        --bucket $BUCKET \
-        --ownership-controls Rules=[{ObjectOwnership=BucketOwnerPreferred}] \
-        2>/dev/null || true
-    
-    # 3. Set ACL
-    aws s3api put-bucket-acl \
-        --bucket $BUCKET \
-        --acl public-read \
-        2>/dev/null || true
-    
-    # 4. Add bucket policy
-    cat > /tmp/policy-$$.json << EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [{
-        "Sid": "PublicReadGetObject",
-        "Effect": "Allow",
-        "Principal": "*",
-        "Action": "s3:GetObject",
-        "Resource": "arn:aws:s3:::${BUCKET}/*"
-    }]
-}
-EOF
-    
-    aws s3api put-bucket-policy \
-        --bucket $BUCKET \
-        --policy file:///tmp/policy-$$.json \
-        2>/dev/null || true
-    
-    # 5. Enable website hosting
-    aws s3 website s3://$BUCKET \
-        --index-document index.html \
-        --error-document index.html \
-        2>/dev/null || true
-    
-    echo "  ✅ $BUCKET fixed"
-}
-
-# Fix host bucket
-# if [ -n "$HOST_BUCKET" ]; then
-#     fix_bucket "$HOST_BUCKET"
-# fi
-
-# # Fix remote buckets
-# for BUCKET in $REMOTE_BUCKETS; do
-#     fix_bucket "$BUCKET"
-# done
-
+echo "Host Distribution ID: $HOST_DIST_ID"
+echo "Host Bucket: $HOST_BUCKET"
 echo ""
-echo "✅ All buckets fixed!"
 
-# Test one remote entry
+# Get the origin domain from CloudFront
+ORIGIN_DOMAIN=$(aws cloudfront get-distribution --id "$HOST_DIST_ID" --query "Distribution.DistributionConfig.Origins.Items[0].DomainName" --output text)
+ORIGIN_ID=$(aws cloudfront get-distribution --id "$HOST_DIST_ID" --query "Distribution.DistributionConfig.Origins.Items[0].Id" --output text)
+
+echo "Current CloudFront Origin Domain: $ORIGIN_DOMAIN"
+echo "Origin ID: $ORIGIN_ID"
 echo ""
-echo "🧪 Testing remote entry access:"
-FIRST_REMOTE=$(echo "$REMOTE_BUCKETS" | head -1)
-if [ -n "$FIRST_REMOTE" ]; then
-    curl -I "https://${FIRST_REMOTE}.s3-website-us-east-1.amazonaws.com/remoteEntry.json" 2>/dev/null | head -1
+
+# Check if origin is using the correct format
+CORRECT_ORIGIN="${HOST_BUCKET}.s3-website-us-east-1.amazonaws.com"
+echo "Correct origin should be: $CORRECT_ORIGIN"
+
+if [ "$ORIGIN_DOMAIN" != "$CORRECT_ORIGIN" ]; then
+  echo "❌ Origin domain is incorrect!"
+  echo "   Current: $ORIGIN_DOMAIN"
+  echo "   Expected: $CORRECT_ORIGIN"
+else
+  echo "✅ Origin domain is correct"
 fi
 
-# rm -f /tmp/policy-*.json
+# Check if Origin Access Identity is configured
+echo ""
+echo "Checking if OAI is configured..."
+aws cloudfront get-distribution --id "$HOST_DIST_ID" --query "Distribution.DistributionConfig.Origins.Items[0].OriginAccessControlId" --output text

@@ -1,8 +1,19 @@
-name: Deploy MFE Applications
+name: Deploy MFE Code Updates
 
 on:
   push:
-    branches: [main, staging]
+    branches:
+      - main
+      - staging
+    paths-ignore:
+      - 'terraform/**'
+      - 'README.md'
+      - '.gitignore'
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
   workflow_dispatch:
     inputs:
       environment:
@@ -21,18 +32,27 @@ env:
 
 jobs:
   deploy:
+    name: Deploy to ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'prod' || 'staging') }}
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
 
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
+      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -40,100 +60,169 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Get infrastructure outputs from Terraform state
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.11.1
 
-      - name: Terraform Init
+      - name: Get infrastructure outputs
+        id: infra
         run: |
           cd terraform
-          terraform init
-        env:
-          TF_DISABLE_SIGNATURE_VERIFICATION: '1'
+          terraform init -input=false
 
-      - name: Terraform Apply (Create/Update Infrastructure)
-        id: terraform
-        run: |
-          cd terraform
-          terraform apply -auto-approve
+          # Get outputs
+          echo "host_url=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
+          echo "host_bucket=$(terraform output -raw host_bucket_name)" >> $GITHUB_OUTPUT
+          echo "host_distribution_id=$(terraform output -raw host_distribution_id)" >> $GITHUB_OUTPUT
 
-          # Now get outputs (infrastructure exists)
-          echo "HOST_URL=$(terraform output -raw host_app_url 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
-          echo "HOST_BUCKET=$(terraform output -raw host_s3_bucket_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          # Save remote outputs to files
+          terraform output -json remote_app_urls > /tmp/remote_app_urls.json
+          terraform output -json remote_bucket_names > /tmp/remote_bucket_names.json
+          terraform output -json remote_distribution_ids > /tmp/remote_distribution_ids.json
 
-          # Save outputs to files (will exist after first apply)
-          terraform output -json federation_manifest 2>/dev/null > /tmp/federation-manifest.json || echo "{}" > /tmp/federation-manifest.json
-          terraform output -json remote_s3_bucket_names 2>/dev/null > /tmp/remote-buckets.json || echo "{}" > /tmp/remote-buckets.json
-        env:
-          TF_DISABLE_SIGNATURE_VERIFICATION: '1'
+          echo "remote_urls_file=/tmp/remote_app_urls.json" >> $GITHUB_OUTPUT
+          echo "remote_buckets_file=/tmp/remote_bucket_names.json" >> $GITHUB_OUTPUT
+          echo "remote_dist_ids_file=/tmp/remote_distribution_ids.json" >> $GITHUB_OUTPUT
 
-      - name: Check if outputs exist
-        run: |
-          echo "Host URL: ${{ steps.terraform.outputs.HOST_URL }}"
-          echo "Federation manifest exists: $([ -f /tmp/federation-manifest.json ] && echo 'Yes' || echo 'No')"
-
-          # If no outputs (first run), use defaults or fail
-          if [ -z "${{ steps.terraform.outputs.HOST_URL }}" ]; then
-            echo "⚠️ No infrastructure found. This is the first deployment."
-            echo "Infrastructure was just created. Run the workflow again to deploy the app."
-            exit 1
-          fi
-
+      # Generate federation manifest with CloudFront URLs
       - name: Generate federation manifest
         run: |
-          mkdir -p projects/host-app/src/assets
+          mkdir -p projects/host-app/public
 
-          printf '{
-            "app-list": "%s",
-            "app-workspace": "%s",
-            "actor-app": "%s",
-            "app-edit": "%s",
-            "home-app": "%s",
-            "app-parser": "%s"
-          }' \
-          "${{ vars.APP_LIST_URL }}" \
-          "${{ vars.APP_WORKSPACE_URL }}" \
-          "${{ vars.ACTOR_APP_URL }}" \
-          "${{ vars.APP_EDIT_URL }}" \
-          "${{ vars.HOME_APP_URL }}" \
-          "${{ vars.APP_PARSER_URL }}" \
-          > projects/host-app/src/assets/federation.manifest.json
+          cat > projects/host-app/public/federation.manifest.json << 'EOF'
+          {
+            "app-list": "$(jq -r '."app-list"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
+            "app-workspace": "$(jq -r '."app-workspace"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
+            "actor-app": "$(jq -r '."actor-app"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
+            "app-edit": "$(jq -r '."app-edit"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
+            "home-app": "$(jq -r '."home-app"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
+            "app-parser": "$(jq -r '."app-parser"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json"
+          }
+          EOF
 
-          echo "Manifest created:"
-          cat projects/host-app/src/assets/federation.manifest.json
+          echo "✅ Federation manifest generated:"
+          cat projects/host-app/public/federation.manifest.json | jq '.'
 
+      # Build Angular applications
       - name: Build Angular applications
-        if: steps.terraform.outputs.HOST_URL != ''
         run: |
+          # Build shared-utils if exists
           if npx ng build shared-utils --configuration=production 2>/dev/null; then
             echo "✅ shared-utils built"
           fi
+
+          # Build host app
+          echo "Building host-app..."
           npx ng build host-app --configuration=production
+          echo "✅ host-app built"
+
+          # Build remote apps
+          echo "Building remote apps..."
           for app in app-list app-workspace actor-app app-edit home-app app-parser; do
+            echo "  Building $app..."
             npx ng build "$app" --configuration=production
           done
+          echo "✅ All apps built"
 
+      # Deploy to S3
       - name: Deploy to S3
-        if: steps.terraform.outputs.HOST_URL != ''
         run: |
-          aws s3 sync "dist/host-app/browser/" "s3://${{ steps.terraform.outputs.HOST_BUCKET }}/" --delete
+          # Deploy host app
+          echo "Deploying host-app to s3://${{ steps.infra.outputs.host_bucket }}"
+          aws s3 sync "dist/host-app/browser/" "s3://${{ steps.infra.outputs.host_bucket }}/" --delete
 
           # Deploy remote apps
-          if [ -f /tmp/remote-buckets.json ]; then
-            cat /tmp/remote-buckets.json | jq -r 'to_entries[] | "\(.key) \(.value)"' 2>/dev/null | while read app bucket; do
-              if [ -d "dist/${app}/browser" ]; then
-                aws s3 sync "dist/${app}/browser/" "s3://${bucket}/" --delete
-              fi
-            done
-          fi
+          echo "Deploying remote apps..."
+          for app in app-list app-workspace actor-app app-edit home-app app-parser; do
+            BUCKET=$(jq -r ".\"${app}\"" ${{ steps.infra.outputs.remote_buckets_file }})
+            if [ -d "dist/${app}/browser" ] && [ "$BUCKET" != "null" ]; then
+              echo "  Deploying $app to s3://$BUCKET"
+              aws s3 sync "dist/${app}/browser/" "s3://${BUCKET}/" --delete
+            fi
+          done
+          echo "✅ All apps deployed to S3"
 
+      # Invalidate CloudFront cache
       - name: Invalidate CloudFront cache
-        if: steps.terraform.outputs.HOST_URL != ''
+        run: |
+          # Invalidate host distribution
+          echo "Invalidating host CloudFront: ${{ steps.infra.outputs.host_distribution_id }}"
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.infra.outputs.host_distribution_id }}" \
+            --paths "/*"
+
+          # Invalidate remote distributions
+          echo "Invalidating remote CloudFront distributions..."
+          for app in app-list app-workspace actor-app app-edit home-app app-parser; do
+            DIST_ID=$(jq -r ".\"${app}\"" ${{ steps.infra.outputs.remote_dist_ids_file }})
+            if [ "$DIST_ID" != "null" ]; then
+              echo "  Invalidating $app: $DIST_ID"
+              aws cloudfront create-invalidation \
+                --distribution-id "$DIST_ID" \
+                --paths "/*" || true
+            fi
+          done
+          echo "✅ Cache invalidations sent"
+
+      # Wait for invalidation
+      - name: Wait for cache invalidation
+        run: |
+          echo "Waiting 30 seconds for cache invalidation to start..."
+          sleep 30
+
+      # Output deployment URLs
+      - name: Output deployment URLs
+        run: |
+          echo "=========================================="
+          echo "✅ DEPLOYMENT COMPLETE!"
+          echo "=========================================="
+          echo ""
+          echo "Host URL: ${{ steps.infra.outputs.host_url }}"
+          echo ""
+          echo "Federation Manifest:"
+          echo "  ${{ steps.infra.outputs.host_url }}/assets/federation.manifest.json"
+          echo ""
+          echo "Remote Apps:"
+          jq -r 'to_entries[] | "  \(.key): \(.value)"' ${{ steps.infra.outputs.remote_urls_file }}
+          echo ""
+          echo "=========================================="
+
+  # Smoke test job
+  smoke-test:
+    name: Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success() && github.event_name != 'pull_request'
+
+    steps:
+      - name: Get host URL
+        id: urls
         run: |
           cd terraform
-          CF_IDS=$(terraform output -json cloudfront_distribution_ids 2>/dev/null || echo "{}")
-          HOST_CF_ID=$(echo "$CF_IDS" | jq -r '.host')
-          if [ -n "$HOST_CF_ID" ] && [ "$HOST_CF_ID" != "null" ]; then
-            aws cloudfront create-invalidation --distribution-id "$HOST_CF_ID" --paths "/*" --no-cli-pager
+          terraform init -input=false
+          echo "host_url=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
+
+      - name: Test host app
+        run: |
+          echo "Testing host app: ${{ steps.urls.outputs.host_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.urls.outputs.host_url }}" --max-time 30)
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Host app returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "✅ Host app is accessible"
+
+      - name: Test federation manifest
+        run: |
+          MANIFEST_URL="${{ steps.urls.outputs.host_url }}/assets/federation.manifest.json"
+          echo "Testing manifest: $MANIFEST_URL"
+
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$MANIFEST_URL" --max-time 30)
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "⚠️  Federation manifest returned HTTP $HTTP_CODE"
+          else
+            echo "✅ Federation manifest accessible"
+            curl -s "$MANIFEST_URL" | jq '.'
           fi

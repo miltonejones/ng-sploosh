@@ -1,0 +1,83 @@
+{
+  "federation_manifest": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "actor-app": "string",
+        "app-edit": "string",
+        "app-list": "string",
+        "app-parser": "string",
+        "app-workspace": "string",
+        "home-app": "string"
+      }
+    ],
+    "value": {
+      "actor-app": "https://d1ox3t7rwcj2ph.cloudfront.net/remoteEntry.json",
+      "app-edit": "https://dp7pynwfjtiuu.cloudfront.net/remoteEntry.json",
+      "app-list": "https://d20z6nctsshuno.cloudfront.net/remoteEntry.json",
+      "app-parser": "https://d32heb94hwp9zw.cloudfront.net/remoteEntry.json",
+      "app-workspace": "https://d2n4ad13y300ye.cloudfront.net/remoteEntry.json",
+      "home-app": "https://d1yy38jwd2nc1f.cloudfront.net/remoteEntry.json"
+    }
+  },
+  "host_app_url": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://d2xi9jnrcid4eu.cloudfront.net"
+  },
+  "host_bucket_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "mfe-workspace-host-dev-bdmtxmyz"
+  },
+  "host_distribution_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "E1ADO1FOLBID7D"
+  },
+  "remote_app_urls": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "actor-app": "string",
+        "app-edit": "string",
+        "app-list": "string",
+        "app-parser": "string",
+        "app-workspace": "string",
+        "home-app": "string"
+      }
+    ],
+    "value": {
+      "actor-app": "https://d1ox3t7rwcj2ph.cloudfront.net",
+      "app-edit": "https://dp7pynwfjtiuu.cloudfront.net",
+      "app-list": "https://d20z6nctsshuno.cloudfront.net",
+      "app-parser": "https://d32heb94hwp9zw.cloudfront.net",
+      "app-workspace": "https://d2n4ad13y300ye.cloudfront.net",
+      "home-app": "https://d1yy38jwd2nc1f.cloudfront.net"
+    }
+  },
+  "remote_bucket_names": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "actor-app": "string",
+        "app-edit": "string",
+        "app-list": "string",
+        "app-parser": "string",
+        "app-workspace": "string",
+        "home-app": "string"
+      }
+    ],
+    "value": {
+      "actor-app": "mfe-workspace-actor-app-dev-bdmtxmyz",
+      "app-edit": "mfe-workspace-app-edit-dev-bdmtxmyz",
+      "app-list": "mfe-workspace-app-list-dev-bdmtxmyz",
+      "app-parser": "mfe-workspace-app-parser-dev-bdmtxmyz",
+      "app-workspace": "mfe-workspace-app-workspace-dev-bdmtxmyz",
+      "home-app": "mfe-workspace-home-app-dev-bdmtxmyz"
+    }
+  }
+}

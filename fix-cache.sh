@@ -1,15 +1,28 @@
+#!/bin/bash
+
 cd terraform
 
-# Invalidate all CloudFront distributions
-CF_IDS=$(terraform output -json cloudfront_distribution_ids 2>/dev/null | jq -r '.remote | to_entries[] | .value')
+# Get all remote buckets
+REMOTE_BUCKETS=$(terraform output -json remote_bucket_names 2>/dev/null || echo "{}")
 
-for CF_ID in $CF_IDS; do
-    echo "Invalidating CloudFront: $CF_ID"
-    aws cloudfront create-invalidation --distribution-id "$CF_ID" --paths "/*" --no-cli-pager
+cd ..
+
+# Deploy each remote app
+for app in app-list app-workspace actor-app app-edit home-app app-parser; do
+  # Build the app if not already built
+  if [ ! -d "dist/${app}/browser" ]; then
+    echo "Building $app..."
+    npx ng build "$app" --configuration=production
+  fi
+  
+  # Get bucket name
+  BUCKET=$(echo $REMOTE_BUCKETS | jq -r ".\"${app}\"")
+  
+  if [ -n "$BUCKET" ] && [ "$BUCKET" != "null" ]; then
+    echo "Deploying $app to $BUCKET..."
+    aws s3 sync "dist/${app}/browser/" "s3://${BUCKET}/" --delete
+    echo "✅ $app deployed"
+  else
+    echo "❌ Bucket not found for $app"
+  fi
 done
-
-# Also invalidate host
-HOST_CF_ID=$(terraform output -json cloudfront_distribution_ids 2>/dev/null | jq -r '.host')
-if [ -n "$HOST_CF_ID" ] && [ "$HOST_CF_ID" != "null" ]; then
-    aws cloudfront create-invalidation --distribution-id "$HOST_CF_ID" --paths "/*" --no-cli-pager
-fi
