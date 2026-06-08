@@ -69,6 +69,7 @@ jobs:
       - name: Apply Terraform (if needed)
         run: |
           cd terraform_clean
+          terraform init 
           # Apply if infrastructure doesn't exist
           terraform apply -auto-approve || true
         continue-on-error: true
