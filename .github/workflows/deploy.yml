@@ -69,7 +69,7 @@ jobs:
       - name: Get infrastructure outputs
         id: infra
         run: |
-          cd terraform
+          cd terraform_clean
           terraform init -input=false
 
           # Get outputs
@@ -200,7 +200,7 @@ jobs:
       - name: Get host URL
         id: urls
         run: |
-          cd terraform
+          cd terraform_clean
           terraform init -input=false
           echo "host_url=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
 
