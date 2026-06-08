@@ -273,6 +273,7 @@ export class App implements OnInit, OnChanges {
     if (!video) return;
     this.launcher.open(video, pane, launchInfo.index);
     this.launched.set(this.launcher.launched);
+    this.launcher.focusAll();
 
     console.log({ launched: this.launcher.launched });
   }

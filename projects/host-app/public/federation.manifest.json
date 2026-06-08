@@ -1,8 +1,8 @@
 {
-  "app-list": "https://d3bfdjsteci76.cloudfront.net/remoteEntry.json",
-  "app-workspace": "https://d38zlbs5cj8mfh.cloudfront.net/remoteEntry.json",
-  "actor-app": "https://d2bwa985psx9ub.cloudfront.net/remoteEntry.json",
-  "app-edit": "https://d2rkth6wcv5jll.cloudfront.net/remoteEntry.json",
-  "home-app": "https://d2dvdvlaeflubd.cloudfront.net/remoteEntry.json",
-  "app-parser": "https://d2c6onsrlj5lc1.cloudfront.net/remoteEntry.json"
+  "app-list": "http://localhost:4201/remoteEntry.json",
+  "app-workspace": "http://localhost:4202/remoteEntry.json",
+  "actor-app": "http://localhost:4203/remoteEntry.json",
+  "app-edit": "http://localhost:4204/remoteEntry.json",
+  "home-app": "http://localhost:4205/remoteEntry.json",
+  "app-parser": "http://localhost:4206/remoteEntry.json"
 }

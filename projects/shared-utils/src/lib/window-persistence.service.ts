@@ -146,7 +146,7 @@ export class GlobalWindowLauncherService {
 
     // Save to localStorage
     this.saveToLocalStorage();
-
+    this.focusAll();
     return popup!;
   }
 

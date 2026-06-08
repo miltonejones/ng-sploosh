@@ -67,8 +67,8 @@ export class App implements AfterContentInit {
   }
 
   init() {
-    this.models.set([]);
-    this.remaining.set([]);
+    // this.models.set([]);
+    // this.remaining.set([]);
     this.videoSvc.getDash().subscribe((response) => {
       const sorted = response.sort((a, b) => (a.FaveCount > b.FaveCount ? -1 : 1));
       this.models.set(sorted.slice(0, 6));
