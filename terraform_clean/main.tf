@@ -10,6 +10,13 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  backend "s3" {
+    bucket       = "mfe-workspace-terraform-state-123823813021"
+    key          = "mfe-workspace/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+  }
 }
 
 provider "aws" {

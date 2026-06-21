@@ -29,6 +29,11 @@ on:
 env:
   NODE_VERSION: '20'
   AWS_REGION: 'us-east-1'
+  REMOTE_APPS: 'app-list app-workspace actor-app app-edit home-app app-parser app-models'
+
+concurrency:
+  group: deploy-mfe
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -37,22 +42,18 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
 
     steps:
-      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -60,123 +61,119 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Get infrastructure outputs from Terraform state
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.11.1
 
-      # - name: Apply Terraform (if needed)
-      #   run: |
-      #     cd terraform_clean
-      #     terraform init
-      #     # Apply if infrastructure doesn't exist
-      #     terraform apply -auto-approve || true
-      #   continue-on-error: true
-
+      # Reads from the S3 remote backend configured in terraform_clean/main.tf
       - name: Get infrastructure outputs
         id: infra
         run: |
           cd terraform_clean
           terraform init -input=false
 
-          terraform refresh
+          echo "host_url=$(terraform output -raw host_app_url)" >> "$GITHUB_OUTPUT"
+          echo "host_bucket=$(terraform output -raw host_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "host_distribution_id=$(terraform output -raw host_distribution_id)" >> "$GITHUB_OUTPUT"
 
-          # Get outputs
-          echo "host_url=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
-          echo "host_bucket=$(terraform output -raw host_bucket_name)" >> $GITHUB_OUTPUT
-          echo "host_distribution_id=$(terraform output -raw host_distribution_id)" >> $GITHUB_OUTPUT
-
-          # Save remote outputs to files
           terraform output -json remote_app_urls > /tmp/remote_app_urls.json
           terraform output -json remote_bucket_names > /tmp/remote_bucket_names.json
           terraform output -json remote_distribution_ids > /tmp/remote_distribution_ids.json
-
-          echo "remote_urls_file=/tmp/remote_app_urls.json" >> $GITHUB_OUTPUT
-          echo "remote_buckets_file=/tmp/remote_bucket_names.json" >> $GITHUB_OUTPUT
-          echo "remote_dist_ids_file=/tmp/remote_distribution_ids.json" >> $GITHUB_OUTPUT
 
       # Generate federation manifest with CloudFront URLs
       - name: Generate federation manifest
         run: |
           mkdir -p projects/host-app/public
 
-          cat > projects/host-app/public/federation.manifest.json << 'EOF'
-          {
-            "app-list": "$(jq -r '."app-list"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
-            "app-workspace": "$(jq -r '."app-workspace"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
-            "actor-app": "$(jq -r '."actor-app"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
-            "app-edit": "$(jq -r '."app-edit"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
-            "home-app": "$(jq -r '."home-app"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json",
-            "app-parser": "$(jq -r '."app-parser"' ${{ steps.infra.outputs.remote_urls_file }})/remoteEntry.json"
-          }
-          EOF
+          jq 'with_entries(.value += "/remoteEntry.json")' /tmp/remote_app_urls.json \
+            > projects/host-app/public/federation.manifest.json
 
           echo "✅ Federation manifest generated:"
           cat projects/host-app/public/federation.manifest.json | jq '.'
 
-      # Build Angular applications
+      # Build ALL Angular applications
       - name: Build Angular applications
         run: |
-          # Build shared-utils if exists
           if npx ng build shared-utils --configuration=production 2>/dev/null; then
             echo "✅ shared-utils built"
           fi
 
-          # Build host app
           echo "Building host-app..."
           npx ng build host-app --configuration=production
           echo "✅ host-app built"
 
-          # Build remote apps
           echo "Building remote apps..."
-          for app in app-list app-workspace actor-app app-edit home-app app-parser; do
+          for app in $REMOTE_APPS; do
             echo "  Building $app..."
             npx ng build "$app" --configuration=production
+            echo "  ✅ $app built"
           done
-          echo "✅ All apps built"
 
       # Deploy to S3
       - name: Deploy to S3
         run: |
-          # Deploy host app
           echo "Deploying host-app to s3://${{ steps.infra.outputs.host_bucket }}"
           aws s3 sync "dist/host-app/browser/" "s3://${{ steps.infra.outputs.host_bucket }}/" --delete
+          echo "✅ host-app deployed to S3"
 
-          # Deploy remote apps
-          echo "Deploying remote apps..."
-          for app in app-list app-workspace actor-app app-edit home-app app-parser; do
-            BUCKET=$(jq -r ".\"${app}\"" ${{ steps.infra.outputs.remote_buckets_file }})
-            if [ -d "dist/${app}/browser" ] && [ "$BUCKET" != "null" ]; then
+          echo "Deploying remote apps to S3..."
+          for app in $REMOTE_APPS; do
+            BUCKET=$(jq -r ".\"${app}\"" /tmp/remote_bucket_names.json)
+            if [ -n "$BUCKET" ] && [ "$BUCKET" != "null" ] && [ -d "dist/${app}/browser" ]; then
               echo "  Deploying $app to s3://$BUCKET"
               aws s3 sync "dist/${app}/browser/" "s3://${BUCKET}/" --delete
+              echo "  ✅ $app deployed to S3"
+            else
+              echo "  ⚠️ Skipping $app - bucket not found or dist missing"
             fi
           done
-          echo "✅ All apps deployed to S3"
+
+      # S3 sometimes serves .js/.mjs with the wrong Content-Type, which breaks module loading
+      - name: Fix JS Content-Type headers
+        run: |
+          fix_bucket() {
+            echo "  Fixing Content-Type for s3://$1"
+            aws s3 cp "s3://$1/" "s3://$1/" \
+              --recursive \
+              --exclude "*" \
+              --include "*.js" \
+              --include "*.mjs" \
+              --content-type "application/javascript" \
+              --metadata-directive REPLACE
+          }
+
+          fix_bucket "${{ steps.infra.outputs.host_bucket }}"
+
+          for app in $REMOTE_APPS; do
+            BUCKET=$(jq -r ".\"${app}\"" /tmp/remote_bucket_names.json)
+            if [ -n "$BUCKET" ] && [ "$BUCKET" != "null" ]; then
+              fix_bucket "$BUCKET"
+            fi
+          done
+          echo "✅ Content-Type fix complete"
 
       # Invalidate CloudFront cache
       - name: Invalidate CloudFront cache
         run: |
-          # Invalidate host distribution
           echo "Invalidating host CloudFront: ${{ steps.infra.outputs.host_distribution_id }}"
           aws cloudfront create-invalidation \
             --distribution-id "${{ steps.infra.outputs.host_distribution_id }}" \
             --paths "/*"
+          echo "✅ Host cache invalidation requested"
 
-          # Invalidate remote distributions
           echo "Invalidating remote CloudFront distributions..."
-          for app in app-list app-workspace actor-app app-edit home-app app-parser; do
-            DIST_ID=$(jq -r ".\"${app}\"" ${{ steps.infra.outputs.remote_dist_ids_file }})
-            if [ "$DIST_ID" != "null" ]; then
-              echo "  Invalidating $app: $DIST_ID"
-              aws cloudfront create-invalidation \
-                --distribution-id "$DIST_ID" \
-                --paths "/*" || true
+          for app in $REMOTE_APPS; do
+            DIST_ID=$(jq -r ".\"${app}\"" /tmp/remote_distribution_ids.json)
+            if [ -n "$DIST_ID" ] && [ "$DIST_ID" != "null" ]; then
+              echo "  Invalidating $app (ID: $DIST_ID)"
+              aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+              echo "  ✅ $app cache invalidation requested"
+            else
+              echo "  ⚠️ Skipping invalidation for $app - distribution ID not found"
             fi
           done
-          echo "✅ Cache invalidations sent"
 
-      # Wait for invalidation
       - name: Wait for cache invalidation
         run: |
           echo "Waiting 30 seconds for cache invalidation to start..."
@@ -185,19 +182,21 @@ jobs:
       # Output deployment URLs
       - name: Output deployment URLs
         run: |
-          echo "=========================================="
+          echo "========================================="
           echo "✅ DEPLOYMENT COMPLETE!"
-          echo "=========================================="
+          echo "========================================="
           echo ""
-          echo "Host URL: ${{ steps.infra.outputs.host_url }}"
+          echo "📍 HOST APP URL (CloudFront):"
+          echo "   ${{ steps.infra.outputs.host_url }}"
           echo ""
-          echo "Federation Manifest:"
-          echo "  ${{ steps.infra.outputs.host_url }}/assets/federation.manifest.json"
+          echo "📦 REMOTE APP URLs (CloudFront):"
+          jq -r 'to_entries[] | "   \(.key): \(.value)"' /tmp/remote_app_urls.json
           echo ""
-          echo "Remote Apps:"
-          jq -r 'to_entries[] | "  \(.key): \(.value)"' ${{ steps.infra.outputs.remote_urls_file }}
+          echo "📋 FEDERATION MANIFEST:"
+          echo "   ${{ steps.infra.outputs.host_url }}/federation.manifest.json"
           echo ""
-          echo "=========================================="
+          echo "⚠️  Note: CloudFront cache invalidation takes 2-5 minutes to fully propagate"
+          echo "========================================="
 
   # Smoke test job
   smoke-test:
@@ -207,12 +206,27 @@ jobs:
     if: success() && github.event_name != 'pull_request'
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.1
+
       - name: Get host URL
         id: urls
         run: |
           cd terraform_clean
           terraform init -input=false
-          echo "host_url=$(terraform output -raw host_app_url)" >> $GITHUB_OUTPUT
+          echo "host_url=$(terraform output -raw host_app_url)" >> "$GITHUB_OUTPUT"
 
       - name: Test host app
         run: |
@@ -226,7 +240,7 @@ jobs:
 
       - name: Test federation manifest
         run: |
-          MANIFEST_URL="${{ steps.urls.outputs.host_url }}/assets/federation.manifest.json"
+          MANIFEST_URL="${{ steps.urls.outputs.host_url }}/federation.manifest.json"
           echo "Testing manifest: $MANIFEST_URL"
 
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$MANIFEST_URL" --max-time 30)
