@@ -1,7 +1,13 @@
 <header>
-  <app-toolbar (menuClick)="openMenu()"></app-toolbar>
+  <app-toolbar
+    (sessionLaunch)="launcher.launchAllSaved()"
+    (windowLaunch)="launcher.launchWindow($event)"
+    (menuClick)="openMenu()"
+    [sessionWindows]="sessionWindows()"
+  ></app-toolbar>
 </header>
 
+<app-mfe-anchor remoteName="actor-app" exposedModule="./Component" />
 <app-mfe-anchor remoteName="app-edit" exposedModule="./Component" />
 <app-mfe-anchor remoteName="app-list" exposedModule="./Component" />
 
@@ -11,24 +17,8 @@
   </section>
 </main>
 
-<app-mfe-anchor remoteName="actor-app" exposedModule="./Component" />
 <app-mfe-anchor remoteName="app-parser" exposedModule="./Component" />
 
-<div class="snack-container" (mouseenter)="setHidden(false)" (mouseleave)="setHidden(true)">
-  @for(item of menu; track $index) {
-  <div
-    class="snack-button"
-    (click)="handleMenu(item.key)"
-    [style.bottom]="$index * 48 + 116 + 'px'"
-  >
-    <i class="{{ item.icon }}"></i>
-  </div>
-  }
+<lib-snack-bar (add)="handleAddVideo()"></lib-snack-bar>
 
-  <div class="add-button">
-    <button class="btn btn-sm" (click)="handleAddVideo()">
-      <i class="fa fa-plus"></i>
-    </button>
-  </div>
-</div>
 <lib-modal-box></lib-modal-box>

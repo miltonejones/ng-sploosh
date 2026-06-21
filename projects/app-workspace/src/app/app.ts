@@ -9,6 +9,7 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import {
   ModelInfo,
   VideoApiService,
@@ -30,7 +31,7 @@ import {
   SearchPersist,
   LaunchWindow,
   RecentViewsService,
-  GlobalWindowLauncherService,
+  SharedUtils,
 } from 'shared-utils';
 import { SharedStateService } from 'shared-utils';
 
@@ -49,17 +50,15 @@ export class App implements OnInit, OnChanges {
   protected readonly title = signal('app-workspace');
   trackInfo: TrackInfo = sampleTrack;
   modelInfo: ModelInfo = sampleTrack.models[0];
-  searchParams: SearchTab[] = [];
+  searchParams = signal<SearchTab[]>([]);
 
   responsePage = signal<TrackResponse>({ count: 0, records: [] });
-
-  //launcher = new GlobalWindowLauncherService();
 
   private videoSvc = inject(VideoApiService);
   private sharedSvc = inject(SharedStateService);
   private pageSvc = inject(PaginationService);
   private route = inject(ActivatedRoute);
-  // launcher = inject(WindowLauncherService);
+  launcher = inject(WindowLauncherService);
   launched = signal<LaunchWindow[]>([]);
   private regionSvc = inject(WindowRegionConfigService);
   private tabSvc = inject(TabPersistService);
@@ -67,6 +66,7 @@ export class App implements OnInit, OnChanges {
   private router = inject(Router);
   private recent = inject(RecentViewsService);
   private modal = inject(ModalEventService);
+  private utils = inject(SharedUtils);
   progress = signal(0);
 
   pageNum = signal(1);
@@ -75,12 +75,35 @@ export class App implements OnInit, OnChanges {
   visiblePages = signal<number[]>([]);
   pageLinks = signal<PageLink[]>([]);
   count = computed(() => this.responsePage().count);
+  selectedParams = signal<Record<string, boolean>>({});
+  busy = signal(false);
 
-  get launcher(): GlobalWindowLauncherService {
-    return window.launcher;
+  setBusy(value: boolean) {
+    this.busy.set(value);
+    this.progress.set(value ? 100 : 0);
   }
 
-  ngOnInit(): void {
+  get searchTerm() {
+    if (!this.searchParam()) return '';
+    return this.searchParam().replace('*', '');
+  }
+
+  toggleParam(tab: SearchTab) {
+    const current = this.selectedParams();
+    this.selectedParams.set({ ...current, [tab.param]: !current[tab.param] });
+  }
+
+  async dropSearches() {
+    const keys = Object.keys(this.selectedParams()).filter((k) => this.selectedParams()[k]);
+    for (const key of keys) {
+      await this.tabSvc.removeTab(key);
+    }
+    await this.updateTabs();
+    if (keys.indexOf(this.searchParam()) < 0) return;
+    this.router.navigate(['/videos/1']);
+  }
+
+  async ngOnInit() {
     this.route.params.subscribe((params) => {
       const page = params['pageNum'] ? Number(params['pageNum']) : 1;
       this.pageNum.set(page);
@@ -101,12 +124,13 @@ export class App implements OnInit, OnChanges {
       this.getPage();
     });
 
-    this.searchParams = this.tabSvc.getTabs();
+    await this.updateTabs();
+    await this.updateLaunched();
   }
 
   isVisited(video: TrackInfo): boolean {
     if (!this.launcher) return false;
-    return this.launcher.isVisited(video); //this.launcher.launched.some((l) => l.video.ID === video.ID);
+    return this.launcher.isVisited(video);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -127,9 +151,20 @@ export class App implements OnInit, OnChanges {
     this.router.navigate([`/find/${tab.param}/1`]);
   }
 
-  dropSearch(url: string) {
-    this.tabSvc.removeTab(url);
-    this.searchParams = this.tabSvc.getTabs();
+  get isFavorite(): boolean {
+    return this.searchParam().indexOf('*') > 0;
+  }
+
+  toggleFavorite() {
+    const freshParam = this.isFavorite
+      ? this.searchParam().replace('*', '')
+      : this.searchParam() + '*';
+    this.router.navigate([`/find/${freshParam}/1`]);
+  }
+
+  async dropSearch(url: string) {
+    await this.tabSvc.removeTab(url);
+    await this.updateTabs();
     if (url !== this.searchParam()) return;
     this.router.navigate(['/videos/1']);
   }
@@ -138,12 +173,21 @@ export class App implements OnInit, OnChanges {
     this.searchSvc.addSearchTerm(this.searchParam());
   }
 
+  observe(subscription: Observable<any>, fn: (res: any) => void) {
+    this.setBusy(true);
+    subscription.subscribe((res) => {
+      this.setBusy(false);
+      fn(res);
+    });
+  }
+
   getPage(page: number = 1) {
     if (this.router.url.indexOf('recent/') > 0) {
       this.openRecentPage();
+      return;
     }
     if (this.router.url.indexOf('favorites') > 0) {
-      this.videoSvc.getFavorites(this.pageNum()).subscribe((message) => {
+      this.observe(this.videoSvc.getFavorites(this.pageNum()), (message) => {
         this.setMessage(message);
       });
       return;
@@ -156,16 +200,21 @@ export class App implements OnInit, OnChanges {
       this.openDomainPage();
       return;
     }
-    this.videoSvc.getVideos(this.pageNum()).subscribe((message) => {
+    this.observe(this.videoSvc.getVideos(this.pageNum()), (message) => {
       this.setMessage(message);
     });
+    // this.videoSvc.getVideos(this.pageNum()).subscribe((message) => {
+    //   this.setMessage(message);
+    // });
   }
 
-  openRecentPage() {
-    const views = this.recent.getRecent();
+  async openRecentPage() {
+    const views = await this.recent.getRecentAsync();
+
+    console.log({ views });
     const start = 30 * (this.pageNum() - 1);
     const videoIds = views.slice(start, start + 30);
-    this.videoSvc.getVideoKeys(videoIds.map((d) => d.toString())).subscribe((res) => {
+    this.observe(this.videoSvc.getVideoKeys(videoIds.map((d) => d.toString())), (res) => {
       const records: TrackInfo[] = [];
       videoIds.forEach((id) => {
         const record = (res as TrackResponse).records.find((f) => f.ID === id);
@@ -180,28 +229,37 @@ export class App implements OnInit, OnChanges {
     });
   }
 
-  openDomainPage() {
+  async openDomainPage() {
     this.tabSvc.applyTab(this.domainParam(), 'domain');
-    this.searchParams = this.tabSvc.getTabs();
-    this.videoSvc.getVideosByDomain(this.domainParam(), this.pageNum()).subscribe((message) => {
+    await this.updateTabs();
+    this.observe(this.videoSvc.getVideosByDomain(this.domainParam(), this.pageNum()), (message) => {
       this.setMessage(message);
     });
-    // this.sharedSvc.setSearch(this.domainParam());
   }
 
-  openSearchPage() {
-    this.tabSvc.applyTab(this.searchParam());
-    this.searchParams = this.tabSvc.getTabs();
-    this.videoSvc
-      .findVideos(this.searchParam(), this.pageNum(), this.domainParam())
-      .subscribe((message) => {
+  async updateTabs() {
+    const searchParams = await this.tabSvc.getTabsAsync();
+    this.searchParams.set(searchParams);
+  }
+
+  async openSearchPage() {
+    await this.tabSvc.applyTab(this.searchParam());
+    await this.updateTabs();
+    this.observe(
+      this.videoSvc.findVideos(this.searchParam(), this.pageNum(), this.domainParam()),
+      (message) => {
         this.setMessage(message);
-      });
+      },
+    );
     this.sharedSvc.setSearch(this.searchParam());
   }
 
   async handleItemClick(info: MenuInfo) {
-    // alert(info.key);
+    // alert(1);
+    await this.utils.handleItemClick(info);
+  }
+
+  async handleItemClick_ex(info: MenuInfo) {
     switch (info.key) {
       case 'studio':
         this.router.navigate(['/find', info.studio! + '-', 1]);
@@ -210,7 +268,20 @@ export class App implements OnInit, OnChanges {
         window.open(`https://www.google.com/search?q=${info.video.Key}`);
         break;
       case 'info':
-        await this.modal.alert(info.video.title, 'Video Info', info.video.image!);
+        const menu = this.utils.getMenuItems(info.video);
+        const answer = await this.modal.alert(
+          info.video.title,
+          'Video Info',
+          info.video.image!,
+          menu,
+        );
+        if (answer.key) {
+          this.handleItemClick({
+            ...info,
+            key: answer.key,
+          });
+          break;
+        }
         break;
       case 'jav':
         if (!info.video.Key) {
@@ -230,7 +301,7 @@ export class App implements OnInit, OnChanges {
         break;
       case 'fave':
         this.videoSvc.toggleVideoFavorite(info.video.ID).subscribe((response) => {
-          this.getPage();
+          this.sharedSvc.refreshVideo();
         });
         break;
       case 'edit':
@@ -266,27 +337,26 @@ export class App implements OnInit, OnChanges {
     this.sharedSvc.selectModel(id);
   }
 
-  openVideo(launchInfo: LaunchInfo) {
+  async openVideo(launchInfo: LaunchInfo) {
     console.log({ launchInfo });
     const pane = this.regionSvc.REGIONS[launchInfo.index];
     const video = this.responsePage().records.find((f) => f.URL === launchInfo.url);
     if (!video) return;
-    this.launcher.open(video, pane, launchInfo.index);
+    await this.launcher.open(video, pane, launchInfo.index);
     this.launched.set(this.launcher.launched);
     this.launcher.focusAll();
 
-    console.log({ launched: this.launcher.launched });
+    await this.updateLaunched();
+  }
+
+  async updateLaunched() {
+    const launched = await this.launcher.getSavedLaunches();
+    this.launched.set(launched);
   }
 
   handleAddVideo() {
     // const uri = prompt('enter url');
     // if (!uri) return;
     // this.sharedSvc.addVideo(uri);
-  }
-}
-
-declare global {
-  interface Window {
-    launcher: GlobalWindowLauncherService;
   }
 }

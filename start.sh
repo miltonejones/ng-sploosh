@@ -1,3 +1,5 @@
+  
+  ng s app-models --port 4207 &
   ng s app-list --port 4201 &
   ng s app-workspace --port 4202 &
   ng s actor-app --port 4203 &

@@ -25,7 +25,7 @@ export class NavButtons implements OnInit {
     {
       label: 'Videos',
       address: '/videos/1',
-      key: ['find', 'videos'],
+      key: ['find', 'videos', 'domain'],
       active: false,
     },
     {
@@ -38,6 +38,12 @@ export class NavButtons implements OnInit {
       label: 'Recently Watched',
       address: '/recent/1',
       key: ['recent'],
+      active: false,
+    },
+    {
+      label: 'Models',
+      address: '/models/1',
+      key: ['models'],
       active: false,
     },
   ];

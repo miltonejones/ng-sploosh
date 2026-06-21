@@ -109,7 +109,7 @@ export class App implements AfterContentInit {
   }
 
   selectModel(model: DashModel) {
-    this.sharedSvc.selectModel(model.ID);
+    this.selectModelById(model.ID);
   }
 
   selectModelById(id: number) {

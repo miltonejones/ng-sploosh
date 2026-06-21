@@ -1,14 +1,16 @@
-import { Component, input, OnChanges, OnInit, output, signal, SimpleChanges } from '@angular/core';
+import { Component, input, OnChanges, output, signal, SimpleChanges } from '@angular/core';
 import {
   TrackInfo,
   RegionMenuComponent,
-  Dropmenu,
   DropMenuItem,
   ActorInfo,
   LaunchWindow,
+  ModelInfo,
+  ThumbnailMenu,
 } from 'shared-utils';
 import { ImageSource } from '../../directives/image-source';
 import { ActorMenu } from '../actor-menu/actor-menu';
+import { MenuItemService } from '../../services/menu-item.service';
 
 export interface LaunchInfo {
   index: number;
@@ -23,12 +25,13 @@ export interface MenuInfo {
 
 @Component({
   selector: 'app-actor-video-card',
-  imports: [ImageSource, RegionMenuComponent, Dropmenu, ActorMenu],
+  imports: [ImageSource, RegionMenuComponent, ThumbnailMenu, ActorMenu],
   templateUrl: './actor-video-card.html',
   styleUrl: './actor-video-card.css',
 })
 export class ActorVideoCard implements OnChanges {
   launched = input<LaunchWindow[]>([]);
+  display = input(false);
   isOpen = signal(false);
   track = input<TrackInfo>();
   visited = input<boolean>(false);
@@ -39,7 +42,10 @@ export class ActorVideoCard implements OnChanges {
   modelClicked = output<ActorInfo>();
   dedupe = output<number>();
   isWide = true;
+  isMenu = signal(false);
   actorId = input<number>();
+
+  constructor(private utils: MenuItemService) {}
 
   ngOnInit(): void {
     this.setMenuItems();
@@ -59,65 +65,70 @@ export class ActorVideoCard implements OnChanges {
   }
 
   setMenuItems() {
-    const isOk = this.track()?.favorite;
-    this.items = [
-      {
-        label: 'Video info',
-        icon: 'fa-circle-info',
-        key: 'info',
-      },
-      {
-        label: isOk ? 'Remove from favorites' : 'Add to favorites',
-        icon: 'fa-heart',
-        key: 'fave',
-        red: isOk,
-      },
-      {
-        label: 'Delete video',
-        icon: 'fa-trash-can',
-        key: 'drop',
-      },
-      {
-        label: 'Open video source',
-        icon: 'fa-up-right-from-square',
-        key: 'open',
-      },
-      {
-        label: 'Find in JAVLibrary',
-        icon: 'fa-book',
-        key: 'jav',
-      },
-    ];
+    this.items = this.utils.getMenuItems(this.track()!);
+    // const isOk = this.track()?.favorite;
+    // this.items = [
+    //   // {
+    //   //   label: 'Video info',
+    //   //   icon: 'fa-circle-info',
+    //   //   key: 'info',
+    //   // },
+    //   {
+    //     label: '',
+    //     key: 'none',
+    //   },
+    //   {
+    //     label: isOk ? 'Remove from favorites' : 'Add to favorites',
+    //     icon: 'fa-heart',
+    //     key: 'fave',
+    //     red: isOk,
+    //   },
+    //   {
+    //     label: 'Delete video',
+    //     icon: 'fa-trash-can',
+    //     key: 'drop',
+    //   },
+    //   {
+    //     label: 'Open video source',
+    //     icon: 'fa-up-right-from-square',
+    //     key: 'open',
+    //   },
+    //   {
+    //     label: 'Find in JAVLibrary',
+    //     icon: 'fa-book',
+    //     key: 'jav',
+    //   },
+    // ];
 
-    if (this.track()?.Key) {
-      this.items.push({
-        label: `Google search "${this.track()?.Key}"`,
-        icon: 'fa-magnifying-glass',
-        key: 'google',
-      });
-    }
+    // if (this.track()?.Key) {
+    //   this.items.push({
+    //     label: `Google search "${this.track()?.Key}"`,
+    //     icon: 'fa-magnifying-glass',
+    //     key: 'google',
+    //   });
+    // }
 
-    this.items.push(
-      {
-        label: 'Remove model from video',
-        icon: 'fa-user-times',
-        key: 'decast',
-      },
-      {
-        label: '',
-        key: 'none',
-      },
-      {
-        label: 'Set model photo',
-        icon: 'fa-image',
-        key: 'photo',
-      }
-    );
+    // this.items.push(
+    //   {
+    //     label: 'Remove model from video',
+    //     icon: 'fa-user-times',
+    //     key: 'decast',
+    //   },
+    //   {
+    //     label: '',
+    //     key: 'none',
+    //   },
+    //   {
+    //     label: 'Set model photo',
+    //     icon: 'fa-image',
+    //     key: 'photo',
+    //   },
+    // );
   }
 
   setVideoModels() {
-    if (!this.track()) return;
-    this.actors = this.track()!.models!.map((f) => {
+    if (!this.track()?.models) return;
+    this.actors = this.track()!.models?.map((f: ModelInfo) => {
       const info: ActorInfo = {
         name: f.Name,
         image: f.image!,
@@ -136,10 +147,22 @@ export class ActorVideoCard implements OnChanges {
       video: this.track()!,
       studio: this.track()?.studio,
     });
+    this.isOpen.set(false);
+  }
+
+  setMenu(value: boolean) {
+    this.isMenu.set(value);
   }
 
   setOpen() {
     // if (this.isOpen()) return;
+    if (this.display()) {
+      this.itemClicked.emit({
+        video: this.track()!,
+        key: 'select',
+      });
+      return;
+    }
     this.isOpen.update((f) => !f);
   }
   selectRegion(index: number) {

@@ -20,62 +20,68 @@
           <strong class="modal-title fs-5" id="modelModalLabel">{{ star?.name }}</strong>
           <br />
           <div class="model-alias d-flex align-items-center">
-            @for(alias of actor().aliases; track alias.ID) {
-            <div class="item" (click)="getModelbyID(alias.ID)">
-              {{ alias.alias }}
-            </div>
+            @for (alias of actor().aliases; track alias.ID) {
+              <div class="item" (click)="getModelbyID(alias.ID)">
+                {{ alias.alias }}
+              </div>
             }
           </div>
         </div>
-        <button class="btn btn-sm" (click)="handleAddVideo()">
+        <!-- <button class="btn btn-sm" (click)="handleAddVideo()">
           <i class="fa-solid fa-plus"></i>
-        </button>
-        <button class="btn btn-sm" [class.favorite]="favoriteParam" (click)="setFavorite()">
+        </button> -->
+        <!-- <button class="btn btn-sm" [class.favorite]="favoriteParam" (click)="setFavorite()">
           <i class="fa-solid fa-heart"></i>
-        </button>
-        <button
+        </button> -->
+        <!-- <button
           class="btn btn-sm"
           (click)="setView(viewName === 'costar' ? 'grid' : 'costar')"
           [class.favorite]="viewName === 'costar'"
           [class.hidden]="!costars().length"
         >
           <i class="fa-solid fa-user"></i>
+        </button> -->
+
+        <button class="btn btn-sm" (click)="cropVideos()" [class.favorite]="doomedVideos().length">
+          <i class="fa-solid fa-crop"></i>
         </button>
+
         <button class="btn btn-sm" [class.favorite]="aliasView()" (click)="setAlias()">
           <i class="fa-solid fa-people-arrows"></i>
         </button>
         <div class="input-group">
           @if (aliasView()) {
+            <div class="input-group-prepend">
+              <div class="dropdown" [class.show]="aliases().length">
+                <!-- 2. Set aria-expanded to true -->
+                <button
+                  class="btn btn-sm dropdown-toggle"
+                  type="button"
+                  id="myDropdownButton"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="true"
+                >
+                  @
+                </button>
 
-          <div class="input-group-prepend">
-            <div class="dropdown" [class.show]="aliases().length">
-              <!-- 2. Set aria-expanded to true -->
-              <button
-                class="btn btn-sm dropdown-toggle"
-                type="button"
-                id="myDropdownButton"
-                data-bs-toggle="dropdown"
-                aria-expanded="true"
-              >
-                @
-              </button>
-
-              <!-- 3. Add "show" to the dropdown menu element -->
-              <ul
-                class="dropdown-menu"
-                [class.show]="aliases().length"
-                aria-labelledby="myDropdownButton"
-              >
-                @for(alias of aliases();track alias.ID) {
-                <li>
-                  <!-- <a class="dropdown-item" href="javascript:void(0)">{{ alias.name }}</a> -->
-                  <lib-model-item (select)="addModelAlias($event)" [model]="alias"></lib-model-item>
-                </li>
-                }
-              </ul>
+                <!-- 3. Add "show" to the dropdown menu element -->
+                <ul
+                  class="dropdown-menu"
+                  [class.show]="aliases().length"
+                  aria-labelledby="myDropdownButton"
+                >
+                  @for (alias of aliases(); track alias.ID) {
+                    <li>
+                      <!-- <a class="dropdown-item" href="javascript:void(0)">{{ alias.name }}</a> -->
+                      <lib-model-item
+                        (select)="addModelAlias($event)"
+                        [model]="alias"
+                      ></lib-model-item>
+                    </li>
+                  }
+                </ul>
+              </div>
             </div>
-          </div>
-
           }
           <input
             type="text"
@@ -85,76 +91,136 @@
             (keyup)="modelSearch()"
             (keydown.enter)="getCurrentModel()"
           />
-          @if(paramParam) {
-          <div class="input-group-append" (click)="clearParam()">
-            <span class="input-group-text" id="basic-addon2">&times;</span>
-          </div>
-
+          @if (paramParam) {
+            <div class="input-group-append" (click)="clearParam()">
+              <span class="input-group-text" id="basic-addon2">&times;</span>
+            </div>
           }
         </div>
-
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div style="flex-grow: 1"></div>
+        <!-- <div>??</div> -->
       </div>
       <div class="modal-body">
+        <ul class="nav nav-tabs flex-nowrap">
+          @for (item of tabs(); track item.key) {
+            <li class="nav-item">
+              <button
+                class="nav-link"
+                [class.active]="item.key === viewName"
+                aria-current="page"
+                (click)="setView(item.key)"
+              >
+                {{ item.label }}
+              </button>
+            </li>
+          }
+        </ul>
+
         @if (!!progress()) {
+          <div class="progress p-1">
+            <div
+              class="progress-bar"
+              role="progressbar"
+              [style.width]="`${progress()}%`"
+              aria-valuenow="100"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
+          </div>
+        }
+        @switch (viewName) {
+          @case ('favorite') 
+          @case ('grid') {
+            <lib-paginator
+              [pageNum]="pageNum()"
+              (setPage)="setPage($event)"
+              [pageLinks]="pageLinks()"
+              [count]="count()"
+            ></lib-paginator>
 
-        <div class="progress p-1">
-          <div
-            class="progress-bar"
-            role="progressbar"
-            [style.width]="`${progress()}%`"
-            aria-valuenow="100"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          ></div>
-        </div>
+            @if (!!doomedVideos().length) {
+              <div class="d-flex gap-1 align-items-center p-1">
+                <button class="btn btn-sm mb-2 btn-primary" (click)="dropCroppedVideos()">
+                  Delete {{ doomedVideos().length }} videos from {{ star?.name }}
+                </button>
 
-        } @switch (viewName) { @case ('grid') {
-        <lib-paginator
-          [pageNum]="pageNum()"
-          (setPage)="setPage($event)"
-          [pageLinks]="pageLinks()"
-          [count]="count()"
-        ></lib-paginator>
-        <div class="video-grid">
-          @for(film of actor()!.videos.records; track film.ID) {
-          <app-actor-video-card
-            [visited]="isVisited(film)"
-            (dedupe)="dedupeModel($event)"
-            [actorId]="this.star?.ID"
-            [track]="film"
-            [launched]="launcher.launched"
-            (itemClicked)="handleItemClick($event)"
-            (regionSelect)="openVideo($event)"
-            (modelClicked)="handleModelClick($event)"
-          ></app-actor-video-card>
+                <button class="btn btn-sm mb-2" (click)="cancelCrop()">Cancel</button>
+              </div>
+            }
+
+            <div class="video-grid">
+              @for (film of actor()!.videos.records; track film.ID) {
+                <app-actor-video-card
+                  [visited]="isVisited(film)"
+                  (dedupe)="dedupeModel($event)"
+                  [actorId]="this.star?.ID"
+                  [track]="film"
+                  [launched]="launched()"
+                  (itemClicked)="handleItemClick($event)"
+                  (regionSelect)="openVideo($event)"
+                  (modelClicked)="handleModelClick($event)"
+                ></app-actor-video-card>
+              }
+            </div>
           }
-        </div>
-        } @case ('costar') {
-        <lib-paginator
-          [pageNum]="pageNum()"
-          (setPage)="getCostarPage($event)"
-          [pageLinks]="starLinks()"
-        ></lib-paginator>
-        <div class="model-grid">
-          @for (star of costarPage(); track star.ID) {
-          <lib-model-card
-            (select)="getModel($event)"
-            size="sm"
-            [model]="createAsDash(star)"
-          ></lib-model-card>
-          }
-        </div>
+          @case ('missing') {
+            <!-- <lib-paginator
+              [pageNum]="pageNum()"
+              (setPage)="setPage($event)"
+              [pageLinks]="pageLinks()"
+              [count]="count()"
+            ></lib-paginator> -->
 
-        } @default { Default case. } } @switch(viewName) { }
+            @if (!!selectedVideos().length) {
+              <button class="btn btn-sm mb-2" (click)="recastModels()">
+                Add missing videos to {{ star?.name }}
+              </button>
+            }
+
+            <div class="video-grid">
+              @for (film of missing(); track film.ID) {
+                <app-actor-video-card
+                  [actorId]="this.star?.ID"
+                  [track]="film"
+                  [display]="true"
+                  [visited]="isSelected(film)"
+                  (itemClicked)="handleItemClick($event)"
+                ></app-actor-video-card>
+              }
+            </div>
+          }
+          @case ('costar') {
+            <lib-paginator
+              [pageNum]="pageNum()"
+              (setPage)="getCostarPage($event)"
+              [pageLinks]="starLinks()"
+            ></lib-paginator>
+            <div class="model-grid">
+              @for (star of costarPage(); track star.ID) {
+                <lib-model-card
+                  (select)="getModel($event)"
+                  size="sm"
+                  [model]="createAsDash(star)"
+                ></lib-model-card>
+              }
+            </div>
+          }
+          @default {
+            Default case.
+          }
+        }
+        @switch (viewName) {}
+        
+
+<lib-snack-bar [fixed]="false" (add)="handleAddVideo()"></lib-snack-bar>
       </div>
       <div class="modal-footer">
         @for (person of stars; track person.ID) {
-        <lib-model-avatar
-          [model]="person"
-          (clicked)="getModel($event)"
-          [active]="person.ID === star?.ID"
-        ></lib-model-avatar>
+          <lib-model-avatar
+            [model]="person"
+            (clicked)="getModel($event)"
+            [active]="person.ID === star?.ID"
+          ></lib-model-avatar>
         }
       </div>
     </div>

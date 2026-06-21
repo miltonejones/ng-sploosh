@@ -9,13 +9,12 @@ import {
   ModalResponse,
   WindowLauncherService,
   LaunchWindow,
-  GlobalWindowLauncherService,
+  SnackBar,
 } from 'shared-utils';
 import { Toolbar } from './components/toolbar/toolbar';
-
 @Component({
   selector: 'app-root',
-  imports: [MfeAnchorComponent, RouterOutlet, Toolbar, ModalBox],
+  imports: [MfeAnchorComponent, RouterOutlet, Toolbar, ModalBox, SnackBar],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -26,6 +25,7 @@ export class App {
   multipleCount = signal<number>(0);
   version = APP_VERSION;
   searchParam = signal('');
+  expanded = signal(false);
   menu = [
     {
       label: 'Focus all windows',
@@ -44,15 +44,16 @@ export class App {
     },
   ];
   hidden = signal(true);
+  sessionWindows = signal<LaunchWindow[]>([]);
 
   constructor(
     public sharedState: SharedStateService,
     private modal: ModalEventService,
-    private launcher: WindowLauncherService
-  ) {
-    // const ok = !!window.launcher ? 'exists' : "doesn't  exist";
-    // alert(ok);
-    window.launcher = new GlobalWindowLauncherService();
+    public launcher: WindowLauncherService,
+  ) {}
+
+  setExpanded(value: boolean) {
+    this.expanded.set(value);
   }
 
   ngOnInit(): void {
@@ -62,6 +63,22 @@ export class App {
     this.sharedState.importComplete.subscribe(() => {
       this.addNextVideo();
     });
+    this.sharedState.videoRefresh.subscribe(() => {
+      this.resetSession();
+    });
+    this.launchSession();
+  }
+
+  async resetSession() {
+    debugger;
+    await this.launcher.updateLaunches();
+    this.launchSession();
+  }
+
+  async launchSession() {
+    // await this.launcher.updateLaunches();
+    const panes = await this.launcher.getSavedLaunches();
+    this.sessionWindows.set(panes.sort((a, b) => a.index - b.index));
   }
 
   setHidden(hide: boolean) {
@@ -121,11 +138,5 @@ export class App {
   async handleAddVideo() {
     const res = await this.modal.prompt('Enter video URL', 'Add video to library');
     this.handleResponse(res);
-  }
-}
-
-declare global {
-  interface Window {
-    launcher: GlobalWindowLauncherService;
   }
 }

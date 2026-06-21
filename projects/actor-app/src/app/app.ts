@@ -21,12 +21,15 @@ import {
   DashModel,
   ModelInfo,
   ModelItem,
+  LaunchWindow,
+  SnackBar,
 } from 'shared-utils';
 import {
   ActorVideoCard,
   LaunchInfo,
   MenuInfo,
 } from './components/actor-video-card/actor-video-card';
+import { MenuItemService } from './services/menu-item.service';
 export interface SearchOptions {
   page?: number;
   favorite?: boolean;
@@ -34,6 +37,12 @@ export interface SearchOptions {
   domain?: string;
 }
 
+type viewType = 'grid' | 'costar' | 'missing' | 'favorite';
+
+interface MenuItem {
+  label: string;
+  key: viewType;
+}
 @Component({
   selector: 'app-root',
   imports: [
@@ -45,11 +54,13 @@ export interface SearchOptions {
     ImageFix,
     CommonModule,
     FormsModule,
+    SnackBar,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnInit {
+  //
   protected readonly title = signal('actor-app');
   searchModalContainer: bootstrap.Modal | undefined = undefined;
   actor = signal<ActorResponse>({
@@ -64,15 +75,18 @@ export class App implements OnInit {
   star: ActorInfo | null = null;
   pageLinks = signal<PageLink[]>([]);
   starLinks = signal<PageLink[]>([]);
+  missingLinks = signal<PageLink[]>([]);
   pageNum = signal(1);
   imageError = false;
   stars: ActorInfo[] = [];
+  missing = signal<TrackInfo[]>([]);
   domainParam = '';
   favoriteParam = false;
   paramParam = '';
   costars = signal<ActorInfo[]>([]);
   costarPage = signal<ActorInfo[]>([]);
-  viewName: 'grid' | 'costar' = 'grid';
+  missingPage = signal<TrackInfo[]>([]);
+  viewName: viewType = 'grid';
   aliasView = signal(false);
   aliases = signal<ModelInfo[]>([]);
   multipleURLs = signal<string[]>([]);
@@ -80,14 +94,31 @@ export class App implements OnInit {
   progress = signal(0);
 
   count = computed(() => this.actor().videos.count);
+  tabs = signal<MenuItem[]>([]);
+  selectedVideos = signal<TrackInfo[]>([]);
+  doomedVideos = signal<TrackInfo[]>([]);
+  launched = signal<LaunchWindow[]>([]);
 
   setImageError() {
     this.imageError = true;
   }
 
-  setView(name: 'grid' | 'costar') {
+  setView(name: viewType) {
     this.pageNum.set(1);
+    if (name === 'favorite') {
+      this.toggleFavorite(true);
+      return;
+    }
+    if (name === 'grid') {
+      this.toggleFavorite(false);
+      return;
+    }
     this.viewName = name;
+    // const favoriteParam = !this.favoriteParam;
+    // if (name === 'favorite') {
+    //   this.getCurrentModel();
+    // }
+    // this.favoriteParam = favoriteParam;
   }
 
   constructor(
@@ -96,12 +127,63 @@ export class App implements OnInit {
     public pageSvc: PaginationService,
     public launcher: WindowLauncherService,
     public regionSvc: WindowRegionConfigService,
-    private modal: ModalEventService
+    private modal: ModalEventService,
+    private utils: MenuItemService,
   ) {}
 
   setAlias() {
     this.aliasView.set(!this.aliasView());
     this.aliases.set([]);
+  }
+
+  selectedVideosChange(video: TrackInfo) {
+    const selected = this.selectedVideos();
+    const idx = selected.findIndex((f) => f.ID === video.ID);
+    if (idx === -1) {
+      this.selectedVideos.set([...selected, video]);
+    } else {
+      selected.splice(idx, 1);
+      this.selectedVideos.set([...selected]);
+    }
+  }
+
+  dropCroppedVideos() {
+    const doomed = this.doomedVideos();
+    if (!doomed.length) {
+      this.pageNum.set(1);
+      this.refreshState();
+      return;
+    }
+    const video = doomed.pop();
+    this.videoSvc.deleteVideo(video!.ID).subscribe(() => {
+      this.doomedVideos.set(doomed);
+      this.dropCroppedVideos();
+    });
+  }
+
+  getCroppedVideos(pg: number) {
+    this.videoSvc
+      .getModel(this.star?.ID!, {
+        page: pg,
+      })
+      .subscribe((res) => {
+        if (!res.videos.records.length) return;
+        this.doomedVideos.update((f) => [...f, ...res.videos.records]);
+        this.getCroppedVideos(pg + 1);
+      });
+  }
+
+  cancelCrop() {
+    this.doomedVideos.set([]);
+  }
+
+  cropVideos() {
+    this.doomedVideos.set([]);
+    this.getCroppedVideos(this.pageNum());
+  }
+
+  isSelected(video: TrackInfo): boolean {
+    return !!this.selectedVideos().find((f) => f.ID === video.ID);
   }
 
   refreshState() {
@@ -123,13 +205,30 @@ export class App implements OnInit {
 
   async handleItemClick(info: MenuInfo) {
     switch (info.key) {
+      case 'select':
+        this.selectedVideosChange(info.video);
+        break;
       case 'photo':
         this.videoSvc.updateModelPhoto(this.star?.ID!, info.video.image!).subscribe(() => {
           this.refreshState();
         });
         break;
       case 'info':
-        await this.modal.alert(info.video.title, 'Video Info', info.video.image!);
+        const menu = this.utils.getMenuItems(info.video);
+        const answer = await this.modal.alert(
+          info.video.title,
+          'Video Info',
+          info.video.image!,
+          menu,
+        );
+
+        if (answer.key) {
+          this.handleItemClick({
+            ...info,
+            key: answer.key,
+          });
+          break;
+        }
         break;
       case 'google':
         window.open(`https://www.google.com/search?q=${info.video.Key}`);
@@ -148,6 +247,10 @@ export class App implements OnInit {
         });
         break;
       case 'decast':
+        const accept = await this.modal.confirm(
+          `Are you sure you want to remove ${this.star?.name} from this video?`,
+        );
+        if (!accept.ok) break;
         this.videoSvc.removeModelFromVideo(info.video.ID, this.star?.ID!).subscribe(() => {
           this.refreshState();
         });
@@ -186,13 +289,24 @@ export class App implements OnInit {
     this.launcher.open(video, pane, launchInfo.index);
   }
 
+  displayModel(id: number) {
+    this.pageNum.set(1);
+    this.getModelPage(id);
+    this.showSearchModal();
+  }
+
   ngOnInit(): void {
     this.sharedState.modelSelect.subscribe((id) => {
-      this.pageNum.set(1);
-      this.getModelPage(id);
-      this.showSearchModal();
+      this.displayModel(id);
     });
 
+    window.addEventListener('displayModel', (e: Event) => {
+      // debugger;
+      const customEvent = e as CustomEvent;
+      this.displayModel(customEvent.detail.ID);
+    });
+
+    // alert('Actor App Loaded!');
     this.sharedState.videoRefresh.subscribe(() => {
       this.getModelPage(this.star!.ID);
     });
@@ -204,6 +318,8 @@ export class App implements OnInit {
     this.sharedState.progress.subscribe((num) => {
       this.progress.set(num);
     });
+
+    this.updateLaunched();
   }
 
   getModel(param: any) {
@@ -220,6 +336,20 @@ export class App implements OnInit {
     this.getModelbyID(actor.ID);
   }
 
+  recastModels() {
+    const selected = this.selectedVideos();
+    if (!selected.length) {
+      this.setView('grid');
+      this.refreshState();
+      return;
+    }
+    const video = selected.pop();
+    this.videoSvc.addModelToVideo(video!.ID, this.star?.ID!).subscribe(() => {
+      this.selectedVideos.set(selected);
+      this.recastModels();
+    });
+  }
+
   dedupeModel(videoId: number) {
     this.videoSvc.removeModelFromVideo(videoId, this.star?.ID!).subscribe(() => {
       this.videoSvc.addModelToVideo(videoId, this.star?.ID!).subscribe(() => {
@@ -230,6 +360,11 @@ export class App implements OnInit {
 
   clearParam() {
     this.paramParam = '';
+    this.getCurrentModel();
+  }
+
+  toggleFavorite(value: boolean) {
+    this.favoriteParam = value;
     this.getCurrentModel();
   }
 
@@ -259,7 +394,7 @@ export class App implements OnInit {
   }
 
   getModelPage(id: number) {
-    this.viewName = 'grid';
+    this.viewName = this.favoriteParam ? 'favorite' : 'grid';
     const options = {
       page: this.pageNum(),
       domain: this.domainParam,
@@ -272,28 +407,81 @@ export class App implements OnInit {
       const stars = this.stars.filter((f) => f.ID !== this.star?.ID);
       stars.push(this.star);
       this.stars = stars;
+      this.tabs.set([
+        {
+          label: 'Videos',
+          key: 'grid',
+        },
+        {
+          label: 'Favorites',
+          key: 'favorite',
+        },
+      ]);
       const c = this.pageSvc.getPageLinks(this.pageNum(), 16, response.videos.count);
+      this.getCostars(this.star.ID);
+
+      this.updateLaunched();
       if (response.videos.count <= 16) return this.pageLinks.set([]);
       this.pageLinks.set(c);
-      this.getCostars(this.star.ID);
     });
   }
 
   getCostars(id: number) {
+    // debugger;
     this.videoSvc.getModelCostars(id).subscribe((res) => {
       this.costars.set(res);
       this.getCostarPage();
+
+      if (this.costars().length) {
+        this.tabs.update((f) => [
+          ...f,
+          {
+            label: `Costars (${this.costars().length})`,
+            key: 'costar',
+          },
+        ]);
+      }
     });
   }
 
   getCostarPage(pg?: number) {
     const page = pg || 1;
-    const c = this.pageSvc.getPageLinks(this.pageNum(), 15, this.costars().length);
+    const c = this.pageSvc.getPageLinks(page, 15, this.costars().length);
     const start = (page - 1) * 15;
     this.costarPage.set(this.costars().slice(start, start + 15));
     console.log({ c });
     !!pg && this.pageNum.set(page);
     this.starLinks.set(c);
+    this.getMissing();
+  }
+
+  getMissing() {
+    // debugger;
+    this.videoSvc.getModelMissingVideos(this.star?.ID!).subscribe((res) => {
+      this.missing.set(res);
+      console.log({ missing: res });
+      this.getMissingPage();
+      // debugger;
+      if (this.missing().length) {
+        this.tabs.update((f) => [
+          ...f,
+          {
+            label: `(${this.missing().length}) missing videos`,
+            key: 'missing',
+          },
+        ]);
+      }
+    });
+  }
+
+  getMissingPage(pg?: number) {
+    const page = pg || 1;
+    const c = this.pageSvc.getPageLinks(page, 16, this.missing().length);
+    const start = (page - 1) * 15;
+    this.missingPage.set(this.missing().slice(start, start + 15));
+    !!pg && this.pageNum.set(page);
+    console.log({ c });
+    this.missingLinks.set(c);
   }
 
   setPage(page: number) {
@@ -340,6 +528,11 @@ export class App implements OnInit {
   async handleAddVideo() {
     const res = await this.modal.prompt('Enter video URL', 'Add video starring ' + this.star?.name);
     this.handleResponse(res);
+  }
+
+  async updateLaunched() {
+    const launched = await this.launcher.getSavedLaunches();
+    this.launched.set(launched);
   }
 }
 

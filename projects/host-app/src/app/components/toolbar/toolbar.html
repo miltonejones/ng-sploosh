@@ -2,6 +2,53 @@
   <button (click)="openMenu()" class="btn btn-sm"><i class="fa-solid fa-bars"></i></button>
   <img src="https://s3.amazonaws.com/sploosh.me.uk/assets/sploosh.png" />
   <app-nav-buttons></app-nav-buttons>
+  @if (sessionWindows().length > 0) {
+    <div class="dropdown">
+      <button class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-dark">
+        @for (actor of sessionWindows(); track actor.index) {
+          <li
+            (mouseenter)="setOpenId(actor.video.ID)"
+            (mouseleave)="setOpenId(0)"
+            class="m-1 dropdown-item d-flex align-items-center gap-1"
+          >
+            <div class="video-photo" [libImageSource]="actor.video.image">
+              <lib-window-region
+                [selectedIndex]="actor.index"
+                [width]="74"
+                [height]="36"
+                [open]="openId() === actor.video.ID"
+              ></lib-window-region>
+            </div>
+            <div
+              (click)="launchWindow(actor)"
+              class="item-content"
+              [class.favorite]="actor.video.favorite"
+            >
+              {{ actor.video.title }}
+            </div>
+            <button
+              (click)="toggleFavorite(actor)"
+              class="btn btn-sm"
+              [class.favorite]="actor.video.favorite"
+            >
+              <i class="fa-solid fa-circle-info"></i>
+            </button>
+          </li>
+        }
+        <hr class="dropdown-divider" />
+        <li class="dropdown-item" (click)="launchSession()">
+          <i class="fa-solid fa-up-right-from-square"></i> Open all windows
+        </li>
+      </ul>
+    </div>
+
+    <!-- <button class="btn btn-sm" (click)="launchSession()">
+      Launch previous session <i class="fa-solid fa-play"></i>
+    </button> -->
+  }
   <div class="grow-1"></div>
   <app-search></app-search>
 </div>

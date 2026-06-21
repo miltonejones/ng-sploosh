@@ -32,7 +32,7 @@ export class App implements OnInit {
     public sharedSvc: SharedStateService,
     public parser: ParserService,
     public videoSvc: VideoApiService,
-    private modal: ModalEventService
+    private modal: ModalEventService,
   ) {}
 
   ngOnInit(): void {
@@ -71,11 +71,51 @@ export class App implements OnInit {
     this.sharedSvc.completeImport(false);
   }
 
+  async checkVideoError(modelFk: number | null, err: ResponseError) {
+    if (!modelFk) {
+      return;
+    }
+    const match = /([a-zA-Z]+-\d+)/.exec(err.error);
+    // debugger;
+    if (!match) return;
+
+    const response: TrackResponse = await new Promise((resolve) => {
+      this.videoSvc.findVideos(match[1], 1).subscribe((res) => {
+        resolve(res);
+      });
+    });
+    console.log('Video error details:', response);
+
+    // alert(JSON.stringify(response));
+
+    const candidate = response.records.find(
+      (v: any) => !v.models.some((m: any) => m.ID === modelFk),
+    );
+
+    if (candidate) {
+      const confirm = await this.modal.confirm(
+        `Do you want to add this model to the existing video "${candidate.title}"?`,
+        'Existing video',
+        candidate.image!,
+      );
+
+      if (confirm.ok) {
+        await new Promise((resolve) => {
+          this.videoSvc.addModelToVideo(candidate.ID, modelFk!).subscribe(() => {
+            resolve(true);
+          });
+        });
+        this.sharedSvc.refreshVideo();
+      }
+    }
+  }
+
   async processResponse(modelFk: number | null, res: number) {
     if (isNaN(res)) {
       const err: ResponseError = res as unknown as ResponseError;
       if (err.error) {
         await this.modal.alert(err.error, 'Existing video', this.video()?.image!);
+        await this.checkVideoError(modelFk, err);
       }
       this.video.set(null);
       this.status.set('');
@@ -96,10 +136,10 @@ export class App implements OnInit {
   addVideo(modelFk: number | null) {
     this.status.set('Saving video...');
     this.videoSvc.saveVideo(this.video()!).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.processResponse(modelFk, res);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.videoError(err, this.video()?.URL!);
       },
     });

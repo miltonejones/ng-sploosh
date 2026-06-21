@@ -1,5 +1,5 @@
-import { Component, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject, input, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -31,13 +31,28 @@ import { CommonModule } from '@angular/common';
 })
 export class SearchComponent {
   private router = inject(Router);
+  target = input<string>('/find');
   searchParam = '';
+  // private route = inject(ActivatedRoute);
+
+  constructor(public route: ActivatedRoute) {
+    this.route.params.subscribe((params) => {
+      // debugger;
+      this.searchParam = params['searchParam'];
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    console.log({ urlParams });
+  }
 
   onSearch(): void {
+    const isModel = window.location.href.indexOf('models') > 0;
+    const tag = isModel ? '/models' : '/find';
+
     const trimmed = this.searchParam.trim();
     // debugger;
     if (trimmed) {
-      this.router.navigate(['/find', trimmed, 1]);
+      this.router.navigate([tag, trimmed, 1]);
     }
   }
 }

@@ -10,30 +10,32 @@ import { SEARCH_SEED, SharedStateService, PersistedSearches, SearchPersist } fro
 export class App {
   open = signal(false);
   searchParams: string[] = SEARCH_SEED;
-  searchParam = signal('');
-  persisted: PersistedSearches = {
+  searchParam = signal<string>('');
+  persisted = signal<PersistedSearches>({
     pinned: [],
     unpinned: [],
-  };
+  });
 
   constructor(
     public sharedService: SharedStateService,
     public persistSvc: SearchPersist,
-    public route: ActivatedRoute
+    public route: ActivatedRoute,
   ) {}
 
-  refresh(param: string) {
-    this.persisted = this.persistSvc.getSearches();
+  async refresh(param: string) {
+    const persisted = await this.persistSvc.getSearchesAsync();
+    // alert(JSON.stringify(persisted));
+    this.persisted.set(persisted); //this.persistSvc.getSearches();
     this.open.set(true);
     // this.searchParam.set(param);
   }
 
   ngOnInit(): void {
-    this.sharedService.listOpen.subscribe((param) => {
+    this.sharedService.listOpen.subscribe((param: string) => {
       this.refresh(param);
     });
 
-    this.sharedService.searchUpdate.subscribe((param) => {
+    this.sharedService.searchUpdate.subscribe((param: string) => {
       this.searchParam.set(param);
     });
   }
@@ -42,12 +44,12 @@ export class App {
     this.open.set(false);
   }
 
-  pinSearch(term: string) {
-    this.persistSvc.pinSearchTerm(term);
-    this.refresh(this.searchParam());
+  async pinSearch(term: string) {
+    await this.persistSvc.pinSearchTerm(term);
+    await this.refresh(this.searchParam());
   }
-  unpinSearch(term: string) {
-    this.persistSvc.unpinSearchTerm(term);
-    this.refresh(this.searchParam());
+  async unpinSearch(term: string) {
+    await this.persistSvc.unpinSearchTerm(term);
+    await this.refresh(this.searchParam());
   }
 }

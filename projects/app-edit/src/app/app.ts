@@ -8,6 +8,7 @@ import {
   ModelItem,
   ModelInfo,
   ModalEventService,
+  InsertResponse,
 } from 'shared-utils';
 import { ListOption, ModelFinder } from './components/model-finder/model-finder';
 import { ModelDropdown } from './components/model-dropdown/model-dropdown';
@@ -28,7 +29,7 @@ export class App implements OnInit {
   constructor(
     public sharedService: SharedStateService,
     public videoSvc: VideoApiService,
-    public modal: ModalEventService
+    public modal: ModalEventService,
   ) {}
 
   handleStar(star: ModelInfo) {
@@ -48,19 +49,38 @@ export class App implements OnInit {
     });
   }
 
-  handleOption(option: ListOption) {
+  async handleOption(option: ListOption) {
     switch (option.key) {
       case 'multi':
         this.handleMulti(option.data!);
         this.searchModalContainer && this.searchModalContainer.hide();
         break;
       case 'create':
-        this.handleCreate(option.data!);
+        await this.handleCreateAsync(option.data!);
         this.searchModalContainer && this.searchModalContainer.hide();
         break;
       default:
       // do nothing
     }
+  }
+
+  async handleCreateAsync(names: string[]): Promise<void> {
+    const [name] = names;
+    const res = await new Promise<InsertResponse>((handler) =>
+      this.videoSvc.addModel(name).subscribe(handler),
+    );
+    const id = res.insertId;
+    const ok = await this.modal.confirm(`Add video image as model [${id}] image?`);
+    if (ok.ok) {
+      await new Promise((handler) =>
+        this.videoSvc.updateModelPhoto(id, this.video()?.image!).subscribe(handler),
+      );
+    }
+    await new Promise((handler) =>
+      this.videoSvc.addModelToVideo(this.video()?.ID!, id).subscribe(handler),
+    );
+    this.refresh(this.video()?.ID!);
+    this.sharedService.refreshVideo();
   }
 
   handleCreate(names: string[]) {

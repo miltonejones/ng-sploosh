@@ -7,6 +7,21 @@
   padding: 0.5rem;
 }
 
+.dropdown-grid.show {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.dropdown-item {
+  gap: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.dropdown-item a {
+  color: rgba(0, 0, 0, 0.8);
+  text-decoration: none;
+}
+
 .page-links {
   width: 90%;
   margin: 0.25rem auto;
@@ -59,4 +74,29 @@
   white-space: nowrap;
   /* overflow: hidden;
   text-overflow: ellipsis; */
+}
+
+.red {
+  color: red;
+}
+
+.nav-banner {
+  width: calc(100vw - 60px);
+  overflow-x: auto;
+}
+
+.nav-tabs {
+  white-space: nowrap;
+  overflow-x: scroll;
+  /* For Chrome, Safari and Opera */
+  -webkit-scrollbar-width: none; /* This is an alternative to display: none; */
+
+  /* For IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* If you prefer display: none; for webkit, use this instead of -webkit-scrollbar-width */
+.nav-tabs::-webkit-scrollbar {
+  display: none;
 }

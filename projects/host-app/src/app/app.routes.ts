@@ -51,6 +51,30 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'models',
+    component: MfeAnchorComponent,
+    data: {
+      remoteName: 'app-models',
+      exposedModule: './Component',
+    },
+  },
+  {
+    path: 'models/:pageNum',
+    component: MfeAnchorComponent,
+    data: {
+      remoteName: 'app-models',
+      exposedModule: './Component',
+    },
+  },
+  {
+    path: 'models/:searchParam/:pageNum',
+    component: MfeAnchorComponent,
+    data: {
+      remoteName: 'app-models',
+      exposedModule: './Component',
+    },
+  },
+  {
     path: 'recent/:pageNum',
     component: MfeAnchorComponent,
     data: {

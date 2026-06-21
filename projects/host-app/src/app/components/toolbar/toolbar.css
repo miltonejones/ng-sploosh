@@ -1,9 +1,51 @@
 img {
   width: 40px;
-  height: 40px;
+  height: 36px;
   margin-right: 1rem;
 }
 
 .grow-1 {
   flex-grow: 1;
+}
+
+.dropdown-item {
+  cursor: pointer;
+  width: 500px;
+  overflow: hidden;
+  transition: width 0.2s linear;
+}
+
+.video-photo {
+  width: 80px;
+  height: 36px;
+  border-radius: 0.2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.item-content {
+  width: 420px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.dropdown-item:hover .item-content {
+  width: 340px;
+}
+
+.dropdown-item:hover .btn {
+  display: inline;
+}
+
+.dropdown-item .btn {
+  display: none;
+}
+
+button.favorite {
+  color: red;
+}
+
+.dropdown-item .favorite {
+  font-weight: 600;
 }

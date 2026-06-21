@@ -17,9 +17,9 @@
   </div>
   <div class="offcanvas-body">
     <ul class="list-group mb-1">
-      @if (persisted.pinned.length > 0) {
+      @if (persisted().pinned.length > 0) {
       <b>Pinned Searches</b>
-      @for(item of persisted.pinned; track item) {
+      @for(item of persisted().pinned; track item) {
       <li class="list-group-item" [class.active]="item === searchParam()">
         <div class="item-link">
           <a href="/find/{{ item }}/1">{{ item }}</a>
@@ -32,7 +32,7 @@
 
     <ul class="list-group">
       <b>Saved Searches</b>
-      @for(item of persisted.unpinned; track item) {
+      @for(item of persisted().unpinned; track item) {
       <li class="list-group-item" [class.active]="item === searchParam()">
         <div class="item-link">
           <a href="/find/{{ item }}/1">{{ item }}</a>
