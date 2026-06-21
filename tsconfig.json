@@ -71,6 +71,18 @@
     },
     {
       "path": "./projects/app-parser/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/app-models/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/app-models/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/app-models/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/app-models/tsconfig.spec.json"
     }
   ]
 }

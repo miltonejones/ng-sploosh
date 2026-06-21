@@ -686,6 +686,99 @@
 					}
 				}
 			}
+		},
+		"app-models": {
+			"projectType": "application",
+			"schematics": {},
+			"root": "projects/app-models",
+			"sourceRoot": "projects/app-models/src",
+			"prefix": "app",
+			"architect": {
+				"build": {
+					"builder": "@angular-architects/native-federation:build",
+					"options": {},
+					"configurations": {
+						"production": {
+							"target": "app-models:esbuild:production"
+						},
+						"development": {
+							"target": "app-models:esbuild:development",
+							"dev": true
+						}
+					},
+					"defaultConfiguration": "production"
+				},
+				"serve": {
+					"builder": "@angular-architects/native-federation:build",
+					"options": {
+						"target": "app-models:serve-original:development",
+						"rebuildDelay": 500,
+						"dev": true,
+						"cacheExternalArtifacts": false,
+						"port": 0
+					}
+				},
+				"test": {
+					"builder": "@angular/build:unit-test"
+				},
+				"esbuild": {
+					"builder": "@angular/build:application",
+					"options": {
+						"browser": "projects/app-models/src/main.ts",
+						"tsConfig": "projects/app-models/tsconfig.app.json",
+						"assets": [
+							{
+								"glob": "**/*",
+								"input": "projects/app-models/public"
+							}
+						],
+						"styles": [
+							"projects/app-models/src/styles.css"
+						],
+						"polyfills": [
+							"es-module-shims"
+						]
+					},
+					"configurations": {
+						"production": {
+							"budgets": [
+								{
+									"type": "initial",
+									"maximumWarning": "500kB",
+									"maximumError": "1MB"
+								},
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "4kB",
+									"maximumError": "8kB"
+								}
+							],
+							"outputHashing": "all"
+						},
+						"development": {
+							"optimization": false,
+							"extractLicenses": false,
+							"sourceMap": true
+						}
+					},
+					"defaultConfiguration": "production"
+				},
+				"serve-original": {
+					"builder": "@angular/build:dev-server",
+					"configurations": {
+						"production": {
+							"buildTarget": "app-models:esbuild:production"
+						},
+						"development": {
+							"buildTarget": "app-models:esbuild:development"
+						}
+					},
+					"defaultConfiguration": "development",
+					"options": {
+						"port": 4207
+					}
+				}
+			}
 		}
 	}
 }

@@ -25,7 +25,8 @@ variable "remote_apps" {
     "actor-app",
     "app-edit",
     "home-app",
-    "app-parser"
+    "app-parser",
+    "app-models"
   ]
 }
 

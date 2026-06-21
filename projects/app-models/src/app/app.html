@@ -1,0 +1,27 @@
+<div class="page-links">
+  <lib-paginator
+    [pageNum]="page()"
+    (setPage)="setPage($event)"
+    [pageLinks]="pageLinks()"
+    [count]="count()"
+    label="models"
+    [param]="param()"
+  ></lib-paginator>
+</div>
+
+<div class="model-grid">
+  @for (record of response().records; track $index) {
+    <lib-model-card (select)="getModel($event)" [model]="record"></lib-model-card>
+  }
+</div>
+
+<div class="page-links">
+  <lib-paginator
+    [pageNum]="page()"
+    (setPage)="setPage($event)"
+    [pageLinks]="pageLinks()"
+    [count]="count()"
+    label="models"
+    [param]="param()"
+  ></lib-paginator>
+</div>
