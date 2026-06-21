@@ -10,6 +10,8 @@ import { ModalEventService } from '../../modal-event.service';
 })
 export class Paginator {
   pageNum = input(1);
+  label = input('videos');
+  param = input('');
   visiblePages = signal<number[]>([]);
   count = input<number>();
   pageLinks = input<PageLink[]>([]);
@@ -22,7 +24,7 @@ export class Paginator {
   }
 
   async handleJumpPage() {
-    const page = await this.modal.prompt('Enter page number');
+    const page = await this.modal.prompt('Enter page number', 'Set page', '', true);
     if (!page.ok) return;
     this.handleSetPage(Number(page.message));
   }

@@ -1,0 +1,11 @@
+<div class="card-menu d-flex align-items-center justify-content-center" [class.open]="open()">
+  @for (item of items(); track $index) {
+    <div
+      class="card-menu-item d-flex align-items-center justify-content-center"
+      [class.red]="item.red"
+      (click)="clickItem(item.key)"
+    >
+      <i class="fa-solid {{ item.icon }}" [title]="item.label"></i>
+    </div>
+  }
+</div>

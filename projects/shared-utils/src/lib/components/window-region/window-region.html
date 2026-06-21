@@ -1,16 +1,16 @@
 <!-- region-menu.component.html -->
 <div class="region-menu" [class.open]="open()" [style.width.px]="width" [style.height.px]="height">
   @for (region of scaledRegions; track $index) {
-
-  <div
-    class="region-slot background"
-    [blank]="'true'"
-    [libImageSource]="getImageStyle($index)"
-    [style.width.px]="region.width"
-    [style.height.px]="region.height"
-    [style.left.px]="region.x"
-    [style.top.px]="region.y"
-    (click)="select.emit($index)"
-  ></div>
+    <div
+      class="region-slot background"
+      [class.selected]="selectedIndex() === $index"
+      [blank]="'true'"
+      [libImageSource]="getImageStyle($index)"
+      [style.width.px]="region.width"
+      [style.height.px]="region.height"
+      [style.left.px]="region.x"
+      [style.top.px]="region.y"
+      (click)="select.emit($index)"
+    ></div>
   }
 </div>

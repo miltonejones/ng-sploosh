@@ -23,7 +23,7 @@ import { ImageSource } from '../../directives/image-source';
 })
 export class RegionMenuComponent implements OnInit {
   launched = input<LaunchWindow[]>([]);
-  // images: string[] = [];
+  selectedIndex = input<number | null>(null);
 
   @Input() width = 220;
   @Input() height = 130;

@@ -4,7 +4,7 @@
   top: -130px;
   left: 0;
   border: 1px solid red;
-  z-index: 4;
+  z-index: 40;
   background: rgba(0, 0, 0, 0.5);
   transition: top 0.2s ease-in;
 }
@@ -22,4 +22,8 @@
 
 .region-slot:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+.region-slot.selected {
+  background-color: rgba(255, 255, 255, 0.7);
 }

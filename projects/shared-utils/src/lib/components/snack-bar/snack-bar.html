@@ -1,0 +1,23 @@
+<div
+  class="snack-container"
+  [class.fixed]="fixed()"
+  [class.small]="hidden()"
+  (mouseenter)="setHidden(false)"
+  (mouseleave)="setHidden(true)"
+>
+  @for (item of menu; track $index) {
+    <div
+      class="snack-button"
+      (click)="handleMenu(item.key)"
+      [style.bottom]="hidden() ? '10px' : $index * 48 + 72 + 'px'"
+    >
+      <i class="{{ item.icon }}"></i>
+    </div>
+  }
+
+  <div class="btn btn-primary add-button">
+    <button class="btn btn-sm" (click)="handleAddVideo()">
+      <i class="fa fa-plus"></i>
+    </button>
+  </div>
+</div>

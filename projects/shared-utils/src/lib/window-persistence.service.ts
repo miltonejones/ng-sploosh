@@ -126,7 +126,7 @@ export class GlobalWindowLauncherService {
       `width=${region.width},` + // Window width in pixels
         `height=${region.height},` + // Window height in pixels
         `toolbar=0,location=0,` + // Hide browser chrome
-        `left=${region.x},top=${region.y}` // Position on screen (top-left corner)
+        `left=${region.x},top=${region.y}`, // Position on screen (top-left corner)
     );
 
     console.log({ before: this.launched });
@@ -146,7 +146,9 @@ export class GlobalWindowLauncherService {
 
     // Save to localStorage
     this.saveToLocalStorage();
-    this.focusAll();
+    setTimeout(() => {
+      this.focusAll();
+    }, 0);
     return popup!;
   }
 
@@ -155,7 +157,7 @@ export class GlobalWindowLauncherService {
   }
 
   closeAll(): void {
-    this.launched.forEach((app) => app.window?.close());
+    this.launched.forEach((app) => app.window && app.window.close());
     this.launched = [];
     this.saveToLocalStorage();
   }

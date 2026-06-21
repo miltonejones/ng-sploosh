@@ -1,6 +1,7 @@
-import { AfterViewInit, Component, input, output } from '@angular/core';
+import { AfterViewInit, Component, input, OnChanges, output, SimpleChanges } from '@angular/core';
 import { ModelItem } from '../model-item/model-item';
 import { ModelInfo } from '../../models';
+// import { TooltipDirective } from '../../directives/html-tooltip';
 
 @Component({
   selector: 'lib-actor-menu',
@@ -8,7 +9,7 @@ import { ModelInfo } from '../../models';
   templateUrl: './actor-menu.html',
   styleUrl: './actor-menu.css',
 })
-export class ActorMenu implements AfterViewInit {
+export class ActorMenu implements AfterViewInit, OnChanges {
   models = input<ModelInfo[]>();
   getModelId = output<number>();
   editClick = output();
@@ -17,6 +18,14 @@ export class ActorMenu implements AfterViewInit {
   toggleDropdown(event: Event) {
     event.preventDefault();
     this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['models']) {
+      console.log('ActorMenu models updated:', this.models());
+      // Re-initialize tooltips when models change
+      setTimeout(() => this.initTooltips(), 0);
+    }
   }
 
   ngAfterViewInit() {
@@ -41,7 +50,7 @@ export class ActorMenu implements AfterViewInit {
   }
 
   actorImage(star: ModelInfo) {
-    return `<img class='star-image' src='${star.image}' alt='${star.Name}'/>`;
+    return `<img class='star-image' width='140' style='width:100px;aspect-ratio:9/16' src='${star.image}' alt='${star.Name}'/>`;
   }
 
   selectModel(star: ModelInfo) {

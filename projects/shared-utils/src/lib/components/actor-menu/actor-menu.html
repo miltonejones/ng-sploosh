@@ -1,22 +1,47 @@
 <div class="actor-menu">
   @if (!models() || models()!.length === 0) {
-  <i (click)="handleEdit()">add model</i>
+    <i (click)="handleEdit()">add model</i>
   } @else {
-  <a (click)="selectModel(models()![0])">{{ models()![0].Name }}</a>
-  @if (models()!.length > 1) {
+    <a
+      (click)="selectModel(models()![0])"
+      class="model-name"
+      [class.empty]="!models()![0].image"
+      data-bs-toggle="tooltip"
+      [attr.data-bs-title]="actorImage(models()![0])"
+      >{{ models()![0].Name }}</a
+    >
+    @if (models()!.length > 1) {
+      <div class="dropdown">
+        <a class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          + {{ models()!.length - 1 }} more
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark">
+          @for (actor of models()!.slice(1); track actor.ID) {
+            <li class="m-1">
+              <lib-model-item (select)="selectModel($event)" [model]="actor"></lib-model-item>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
+</div>
 
-  <div class="dropdown">
-    <a class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-      + {{ models()!.length - 1 }} more
-    </a>
-    <ul class="dropdown-menu dropdown-menu-dark">
-      @for(actor of models()!.slice(1); track actor.ID) {
-      <li class="m-1">
-        <lib-model-item (select)="selectModel($event)" [model]="actor"></lib-model-item>
-      </li>
-      }
+<ng-template #richTemplate>
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <img
+      src="https://angular.io/assets/images/logos/angular/angular.svg"
+      alt="Angular logo"
+      style="width: 48px; height: 48px; object-fit: contain; align-self: center"
+    />
+    <strong style="font-size: 14px">Angular Tooltip</strong>
+    <p style="margin: 0; font-size: 12px; opacity: 0.8">
+      This tooltip accepts <em>any</em> HTML content via <code>ng-template</code>.
+    </p>
+    <ul style="margin: 0; padding-left: 16px; font-size: 12px">
+      <li>Images ✓</li>
+      <li>Divs &amp; layout ✓</li>
+      <li>Rich text ✓</li>
     </ul>
   </div>
-
-  } }
-</div>
+</ng-template>

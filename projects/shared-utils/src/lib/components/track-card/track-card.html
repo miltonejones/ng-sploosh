@@ -3,28 +3,38 @@
   <div
     class="card-photo"
     [class.visited]="visited()"
-    (click)="setOpen()"
     [libImageSource]="track()?.image"
     [title]="track()?.title"
+    (mouseenter)="setMenu(true)"
+    (mouseleave)="setMenu(false)"
   >
     <lib-window-region
       [launched]="launched()"
       (select)="selectRegion($event)"
       [open]="isOpen()"
     ></lib-window-region>
+
+    <lib-thumbnail-menu
+      [items]="items"
+      [open]="isMenu()"
+      (itemClicked)="handleMenuClick($event)"
+    ></lib-thumbnail-menu>
+
+    <div class="card-surface" (click)="setOpen()"></div>
   </div>
   <div class="card-body">
     <div class="card-marquee">
-      @if(this.model?.image && !isWide) {
-      <div class="card-avatar">
-        <img [src]="this.model!.image" (error)="setWide(true)" />
-      </div>
+      @if (this.model()?.image && !isWide) {
+        <div class="card-avatar">
+          <img [src]="this.model()!.image" (error)="setWide(true)" />
+        </div>
       }
       <div class="card-info">
         <div
+          (click)="handleMenuClick('info')"
           class="card-title"
           [class.favorite]="track()?.favorite"
-          [class.wide]="this.isWide || !this.model?.image"
+          [class.wide]="this.isWide || !this.model()?.image"
         >
           {{ track()?.title }}
         </div>
@@ -32,7 +42,7 @@
           <lib-actor-menu
             (editClick)="handleEditClick()"
             (getModelId)="selectModel($event)"
-            [models]="track()?.models"
+            [models]="models()"
           ></lib-actor-menu>
         </div>
       </div>
@@ -42,9 +52,12 @@
       <div class="domain">
         <a href="/domain/{{ track()?.domain }}/1">{{ track()?.domain }}</a>
       </div>
-      <div class="track-key">
-        <lib-dropmenu (itemClicked)="handleMenuClick($event)" [items]="items"></lib-dropmenu>
-      </div>
+      @if (track()?.studio) {
+        <div class="track-key">
+          <a href="/find/{{ track()?.studio }}/1">{{ track()?.studio }}</a>
+          <!-- <lib-dropmenu (itemClicked)="handleMenuClick($event)" [items]="items"></lib-dropmenu> -->
+        </div>
+      }
     </div>
   </div>
 </div>

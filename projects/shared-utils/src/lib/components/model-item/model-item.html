@@ -1,7 +1,11 @@
-<div class="d-flex gap-1 whitespace-nowrap" (click)="handleSelect(model()!)">
+<div
+  class="d-flex gap-1 whitespace-nowrap"
+  (click)="handleSelect(model()!)"
+  data-bs-toggle="tooltip"
+  [attr.data-bs-title]="actorImage(model()!)"
+>
   @if (!error()) {
-
-  <img [src]="model()?.image" (error)="setError()" />
+    <img [src]="model()?.image" (error)="setError()" [libImageFix]="model()?.image" />
   }
   {{ model()?.Name || model()?.name }}
 </div>

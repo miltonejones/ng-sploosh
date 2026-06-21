@@ -1,6 +1,9 @@
 import { computed, Injectable } from '@angular/core';
-import { TrackInfo, WindowRegion } from './models';
+import { TrackInfo, TrackResponse, WindowRegion } from './models';
 import { RecentViewsService } from './recent-views.service';
+import { DynamoStorageService } from './dynamo-storage.service';
+import { WindowRegionConfigService } from './window-region';
+import { VideoApiService } from './video-service';
 
 interface LaunchWindow {
   window: Window | null;
@@ -13,6 +16,7 @@ export const LAUNCH_COOKIE_NAME = 'prev-launcher-config';
 export class WindowLauncherService {
   public launched: LaunchWindow[] = [];
   private memory: LaunchWindow[] = [];
+  private cookieName = 'window-launcher';
 
   public lastLaunch = computed<LaunchWindow[]>(() => {
     const past = localStorage.getItem(LAUNCH_COOKIE_NAME);
@@ -20,13 +24,70 @@ export class WindowLauncherService {
     return JSON.parse(past);
   });
 
-  constructor(private recent: RecentViewsService) {}
+  constructor(
+    private recent: RecentViewsService,
+    private store: DynamoStorageService,
+    private regionConfig: WindowRegionConfigService,
+    private videoSvc: VideoApiService,
+  ) {}
 
   get lastLaunched(): LaunchWindow[] {
     return this.lastLaunch();
   }
 
-  open(video: TrackInfo, region: WindowRegion, index: number): Window {
+  async getSavedLaunches(): Promise<LaunchWindow[]> {
+    const past = await this.read(); // this.store.getItemAsync(LAUNCH_COOKIE_NAME);
+    if (!past) return [];
+    return JSON.parse(past);
+  }
+
+  async updateLaunches() {
+    const launches = await this.getSavedLaunches();
+    const videoIds = launches.map((item) => item.video.ID.toString());
+    const films = await new Promise((resolve) =>
+      this.videoSvc.getVideoKeys(videoIds).subscribe(resolve),
+    );
+    const updated = launches.map((launch) => {
+      const video = (films as TrackResponse).records.find((f) => f.ID === launch.video.ID);
+      if (!video) return launch;
+      return {
+        ...launch,
+        video,
+      };
+    });
+
+    console.log({ films, updated });
+
+    await this.saveLaunches(updated);
+  }
+
+  async read() {
+    return localStorage.getItem(LAUNCH_COOKIE_NAME); //await this.store.getItemAsync(LAUNCH_COOKIE_NAME);
+  }
+
+  async write(value: string) {
+    localStorage.setItem(LAUNCH_COOKIE_NAME, value);
+    // await this.store.setItemAsync(LAUNCH_COOKIE_NAME, value);
+  }
+
+  async saveLaunches(launches: LaunchWindow[]): Promise<void> {
+    await this.write(JSON.stringify(launches));
+  }
+
+  async launchWindow(info: LaunchWindow): Promise<void> {
+    const region = this.regionConfig.getRegion(info.index);
+    await this.open(info.video, region, info.index);
+  }
+
+  async launchAllSaved(): Promise<void> {
+    const launches = await this.getSavedLaunches();
+    for (const launch of launches) {
+      const region = this.regionConfig.getRegion(launch.index);
+      await this.open(launch.video, region, launch.index);
+    }
+  }
+
+  async open(video: TrackInfo, region: WindowRegion, index: number): Promise<Window> {
     const address = this.buildAddress(video, region);
     const popup = window.open(
       address,
@@ -34,8 +95,10 @@ export class WindowLauncherService {
       `width=${region.width},` + // Window width in pixels
         `height=${region.height},` + // Window height in pixels
         `toolbar=0,location=0,` + // Hide browser chrome
-        `left=${region.x},top=${region.y}` // Position on screen (top-left corner)
+        `left=${region.x},top=${region.y}`, // Position on screen (top-left corner)
     );
+
+    const stored = await this.getSavedLaunches();
 
     console.log({ before: this.launched });
     const launcher: LaunchWindow = { window: popup, video, index };
@@ -44,6 +107,17 @@ export class WindowLauncherService {
     console.log({ launched });
     launched.push(launcher);
     this.memory.push(launcher);
+    const savedWindows = [
+      ...stored.filter((f) => f.index !== index),
+      {
+        window: null,
+        video: launcher.video,
+        index: launcher.index,
+      },
+    ];
+
+    console.log({ savedWindows });
+    await this.saveLaunches(savedWindows);
 
     // Focus the new window so it appears on top
     popup?.focus();

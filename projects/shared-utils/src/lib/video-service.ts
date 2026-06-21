@@ -8,6 +8,7 @@ import {
   DashModel,
   InsertResponse,
   ModelInfo,
+  ModelResponse,
   TrackInfo,
   TrackResponse,
 } from './models';
@@ -69,7 +70,7 @@ export class VideoApiService {
       { Keys: keys },
       {
         headers: JSON_HEADERS,
-      }
+      },
     );
   }
 
@@ -79,7 +80,7 @@ export class VideoApiService {
       { Keys: keys },
       {
         headers: JSON_HEADERS,
-      }
+      },
     );
   }
 
@@ -91,7 +92,7 @@ export class VideoApiService {
       { ...video, title, URL },
       {
         headers: JSON_HEADERS,
-      }
+      },
     );
   }
 
@@ -105,7 +106,7 @@ export class VideoApiService {
     return this.http.put(
       `${this.apiEndpoint}/toggle-video-heart`,
       { ID: id },
-      { headers: JSON_HEADERS }
+      { headers: JSON_HEADERS },
     );
   }
 
@@ -125,13 +126,13 @@ export class VideoApiService {
 
   // ── Models ─────────────────────────────────────────────────────────────────
 
-  getModels(page: number): Observable<unknown> {
-    return this.http.get(`${this.apiEndpoint}/models/${page}`);
+  getModels(page: number): Observable<ModelResponse> {
+    return this.http.get<ModelResponse>(`${this.apiEndpoint}/models/${page}`);
   }
 
   getModel(
     id: number | string,
-    options: { page?: number; favorite?: boolean; param?: string; domain?: string } = {}
+    options: { page?: number; favorite?: boolean; param?: string; domain?: string } = {},
   ): Observable<ActorResponse> {
     const { page = 1, favorite = false, param, domain } = options;
     const suffix = favorite ? '/1' : '';
@@ -156,7 +157,7 @@ export class VideoApiService {
       { title },
       {
         headers: JSON_HEADERS,
-      }
+      },
     );
   }
 
@@ -164,8 +165,8 @@ export class VideoApiService {
     return this.http.get<ActorInfo[]>(`${this.apiEndpoint}/model-costars/${id}`);
   }
 
-  getModelMissingVideos(id: number | string): Observable<unknown> {
-    return this.http.get(`${this.apiEndpoint}/model-missing/${id}`);
+  getModelMissingVideos(id: number | string): Observable<TrackInfo[]> {
+    return this.http.get<TrackInfo[]>(`${this.apiEndpoint}/model-missing/${id}`);
   }
 
   addModel(name: string): Observable<InsertResponse> {
@@ -185,9 +186,9 @@ export class VideoApiService {
         return this.http.put(
           `${this.apiEndpoint}/model/cast`,
           { trackFk, modelFk },
-          { headers: JSON_HEADERS }
+          { headers: JSON_HEADERS },
         );
-      })
+      }),
     );
   }
 
@@ -199,7 +200,7 @@ export class VideoApiService {
     return this.http.put(
       `${this.apiEndpoint}/add-model-alias`,
       { modelFk, aliasFk },
-      { headers: JSON_HEADERS }
+      { headers: JSON_HEADERS },
     );
   }
 
@@ -207,7 +208,7 @@ export class VideoApiService {
     return this.http.put(
       `${this.apiEndpoint}/add-model-photo`,
       { id, image },
-      { headers: JSON_HEADERS }
+      { headers: JSON_HEADERS },
     );
   }
 

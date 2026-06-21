@@ -15,7 +15,10 @@ import { TrackInfo } from '../../models';
 export class ModalBox implements OnInit {
   @ViewChild('inputField') inputField!: ElementRef;
 
-  constructor(private eventSvc: ModalEventService, private parser: ParserService) {}
+  constructor(
+    private eventSvc: ModalEventService,
+    private parser: ParserService,
+  ) {}
   modalContainer: bootstrap.Modal | undefined = undefined;
   request = signal<ModalRequest | null>(null);
   respond = output<ModalResponse>();
@@ -28,6 +31,7 @@ export class ModalBox implements OnInit {
     this.eventSvc.modalRequest.subscribe((request) => {
       this.request.set(request);
       this.responseStrings.set([]);
+      this.multipleText = !request.single;
       this.show();
     });
   }
@@ -58,6 +62,16 @@ export class ModalBox implements OnInit {
       }));
     });
     this.responseText = '';
+  }
+
+  handleMenu(key: string) {
+    if (this.request()?.handler) {
+      this.request()?.handler!({
+        ok: false,
+        key,
+      });
+      this.hide();
+    }
   }
 
   handleCancel() {

@@ -1,13 +1,20 @@
 .card-photo {
-  width: 240px;
+  width: 14vw;
   height: 140px;
   background-size: 50% 100%;
   position: relative;
   overflow: hidden;
 }
 
+.card-surface {
+  width: 14vw;
+  height: 140px;
+  background-color: transparent;
+  z-index: 10;
+}
+
 .card {
-  width: 240px;
+  width: 14vw;
 }
 
 .card-photo.visited {
@@ -42,15 +49,21 @@
 
 .card-title {
   font-size: 1rem;
-  width: 190px;
+  width: calc(14vw - 50px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-bottom: 0;
+  cursor: pointer;
 }
 
 .card-title.wide {
-  width: 230px;
+  width: calc(14vw - 10px);
+  /* width: 230px; */
+}
+
+.card-title:hover {
+  text-decoration: underline;
 }
 
 .card-text,
@@ -59,10 +72,18 @@
   flex-direction: row;
 }
 
+.card-foot a,
 .card-foot {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
+.card-foot a {
+  color: #444;
+  text-decoration: none;
+}
+.card-foot a:hover {
+  text-decoration: underline;
+}
 .domain,
 .track-key {
   cursor: pointer;

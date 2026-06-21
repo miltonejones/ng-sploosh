@@ -1,24 +1,31 @@
 <div class="d-flex gap-1 align-items-center">
-  @for(num of pageLinks();track num.pageLink) { @if (num.pageNumber) {
-
-  <a
-    href="javascript:void(0)"
-    (click)="handleSetPage(num.pageNumber)"
-    [class.btn-primary]="num.pageNumber === pageNum()"
-    class="btn btn-sm"
-  >
-    {{ num.pageLink }}
-  </a>
-  } @else {
-  <button class="btn btn-sm">
-    {{ num.pageLink }}
-  </button>
-  } } @if(pageLinks().length > 5) {
-
-  <button class="btn btn-sm" (click)="handleJumpPage()">
-    <i class="fa-regular fa-file-lines"></i>
-  </button>
-  } @if(count()) {
-  <button class="btn btn-sm">{{ count() }} videos</button>
+  @for (num of pageLinks(); track num.pageLink) {
+    @if (num.pageNumber) {
+      <a
+        href="javascript:void(0)"
+        (click)="handleSetPage(num.pageNumber)"
+        [class.btn-primary]="num.pageNumber === pageNum()"
+        class="btn btn-sm"
+      >
+        {{ num.pageLink }}
+      </a>
+    } @else {
+      <button class="btn btn-sm">
+        {{ num.pageLink }}
+      </button>
+    }
+  }
+  @if (pageLinks().length > 5) {
+    <button class="btn btn-sm" (click)="handleJumpPage()">
+      <i class="fa-regular fa-file-lines"></i>
+    </button>
+  }
+  @if (count()) {
+    <a class="btn btn-sm"
+      >{{ count() }} {{ label() }}
+      @if (param()) {
+        like <b>"{{ param() }}"</b>
+      }
+    </a>
   }
 </div>

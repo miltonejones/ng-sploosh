@@ -2,6 +2,7 @@ import { Paginator } from './lib/components/paginator/paginator';
 
 export * from './lib/models';
 export * from './lib/shared-state.service';
+export * from './lib/shared-utils';
 export * from './lib/constants';
 export * from './lib/video-service';
 export * from './lib/parser-service';
@@ -30,3 +31,9 @@ export { ModalBox } from './lib/components/modal-box/modal-box';
 export { ModelCard } from './lib/components/model-card/model-card';
 export { TrackCard } from './lib/components/track-card/track-card';
 export type { LaunchInfo, MenuInfo } from './lib/components/track-card/track-card';
+export { ThumbnailMenu } from './lib/components/thumbnail-menu/thumbnail-menu';
+
+export { TooltipComponent } from './lib/components/tooltip.component/tooltip.component';
+export { TooltipDirective } from './lib/directives/html-tooltip';
+export { SnackBar } from './lib/components/snack-bar/snack-bar';
+export type { TooltipPosition } from './lib/directives/html-tooltip';

@@ -5,7 +5,7 @@ a.dropdown-toggle {
 .actor-menu {
   display: flex;
   flex-direction: row;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   gap: 0.2rem;
 }
 
@@ -24,6 +24,23 @@ i:hover {
 i {
   color: red;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   cursor: pointer;
+}
+
+a.model-name {
+  text-decoration: underline;
+  color: rgba(0, 0, 0, 0.8);
+}
+a.model-name:hover {
+  text-decoration: none;
+}
+a.model-name.empty {
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.6);
+  text-decoration: none;
+}
+
+a.model-name.empty:hover {
+  text-decoration: underline;
 }

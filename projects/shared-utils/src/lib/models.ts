@@ -52,6 +52,12 @@ export interface ModelInfo {
   Name: string;
   name?: string;
   image?: string | null;
+  VideoCount?: number;
+}
+
+export interface ModelResponse {
+  count: number;
+  records: ModelInfo[];
 }
 
 export interface DomainCountInfo {
