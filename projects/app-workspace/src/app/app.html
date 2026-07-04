@@ -95,18 +95,25 @@
   ></lib-paginator>
 </div>
 
-<div class="video-grid">
-  @for (track of responsePage().records; track track.ID) {
-    <lib-track-card
-      (regionSelect)="openVideo($event)"
-      (modelSelect)="selectModel($event)"
-      [track]="track"
-      [visited]="isVisited(track)"
-      (itemClicked)="handleItemClick($event)"
-      [launched]="launched()"
-    ></lib-track-card>
-  }
-</div>
+@if (responsePage().records.length) {
+  <div class="video-grid">
+    @for (track of responsePage().records; track track.ID) {
+      <lib-track-card
+        (regionSelect)="openVideo($event)"
+        (modelSelect)="selectModel($event)"
+        [track]="track"
+        [visited]="isVisited(track)"
+        (itemClicked)="handleItemClick($event)"
+        [launched]="launched()"
+      ></lib-track-card>
+    }
+  </div>
+} @else if (!busy()) {
+  <div class="empty-state">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <p>No videos found</p>
+  </div>
+}
 <div class="page-links">
   <lib-paginator
     [pageNum]="pageNum()"

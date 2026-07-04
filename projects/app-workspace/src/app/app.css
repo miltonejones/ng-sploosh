@@ -1,10 +1,69 @@
-.dashboard-grid .sidebar {
+.video-grid {
+  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  width: 90%;
+  margin: 0 auto;
+}
+
+@media (max-width: 1400px) {
+  .video-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 992px) {
+  .video-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .video-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.page-links {
+  width: 90%;
+  margin: 0.25rem auto;
+}
+
+.nav-tabs {
+  white-space: nowrap;
+  overflow-x: scroll;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.nav-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.dashboard-grid .workspace {
-  width: 100vw;
-  padding: 0.5rem;
+.nav-link {
+  font-size: 0.9rem;
+  max-width: 180px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.domain-list {
+  overflow-y: auto;
+  width: 90%;
+  margin: 0.25rem auto;
+  flex-wrap: wrap;
+}
+
+.domain-list a {
+  white-space: nowrap;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid #dee2e6;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.domain-list a:hover {
+  background: #f0f0f0;
+  border-color: #bbb;
+}
+.domain-list a.btn-primary {
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
 }
 
 .dropdown-grid.show {
@@ -22,81 +81,26 @@
   text-decoration: none;
 }
 
-.page-links {
-  width: 90%;
-  margin: 0.25rem auto;
-}
-
-.video-grid {
-  gap: 8px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
-  width: 90%;
-  margin: 0 auto;
-}
-
-.nav-tabs {
-  white-space: nowrap;
-  overflow-x: scroll;
-}
-
-.nav-link {
-  font-size: 0.9rem;
-  max-width: 180px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.add-button {
-  position: fixed;
-  bottom: 50px;
-  right: 50px;
-  z-index: 1000;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: blueviolet;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.domain-list {
-  /* margin-top: 1rem; */
-  /* width: 100vw; */
-  overflow-y: auto;
-  width: 90%;
-  margin: 0.25rem auto;
-}
-
-.domain-list a {
-  white-space: nowrap;
-  /* overflow: hidden;
-  text-overflow: ellipsis; */
-}
-
 .red {
   color: red;
 }
 
-.nav-banner {
-  width: calc(100vw - 60px);
-  overflow-x: auto;
+.empty-state {
+  width: 90%;
+  margin: 3rem auto;
+  text-align: center;
+  color: #aaa;
+  padding: 3rem;
+  border: 2px dashed #e0e0e0;
+  border-radius: 12px;
 }
-
-.nav-tabs {
-  white-space: nowrap;
-  overflow-x: scroll;
-  /* For Chrome, Safari and Opera */
-  -webkit-scrollbar-width: none; /* This is an alternative to display: none; */
-
-  /* For IE, Edge and Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+.empty-state i {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+  opacity: 0.5;
 }
-
-/* If you prefer display: none; for webkit, use this instead of -webkit-scrollbar-width */
-.nav-tabs::-webkit-scrollbar {
-  display: none;
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
 }

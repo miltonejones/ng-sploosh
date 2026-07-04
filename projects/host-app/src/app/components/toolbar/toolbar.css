@@ -1,7 +1,19 @@
+:host {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
 img {
   width: 40px;
   height: 36px;
-  margin-right: 1rem;
+  margin-right: 0.75rem;
 }
 
 .grow-1 {
@@ -11,8 +23,8 @@ img {
 .dropdown-item {
   cursor: pointer;
   width: 500px;
+  max-width: 90vw;
   overflow: hidden;
-  transition: width 0.2s linear;
 }
 
 .video-photo {
@@ -21,25 +33,22 @@ img {
   border-radius: 0.2rem;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .item-content {
-  width: 420px;
+  flex: 1;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.dropdown-item:hover .item-content {
-  width: 340px;
+.dropdown-item .btn {
+  display: none;
 }
 
 .dropdown-item:hover .btn {
   display: inline;
-}
-
-.dropdown-item .btn {
-  display: none;
 }
 
 button.favorite {

@@ -7,7 +7,7 @@ import {
   LaunchInfo,
   MenuInfo,
   TrackCard,
-  recentViews,
+  RecentViewsService,
   TrackResponse,
   WindowRegionConfigService,
   WindowLauncherService,
@@ -27,6 +27,7 @@ export class App implements AfterContentInit {
   private sharedSvc = inject(SharedStateService);
   private regionSvc = inject(WindowRegionConfigService);
   private launcher = inject(WindowLauncherService);
+  private recentSvc = inject(RecentViewsService);
   models = signal<DashModel[]>([]);
   remaining = signal<DashModel[]>([]);
   expanded = signal({
@@ -54,6 +55,8 @@ export class App implements AfterContentInit {
   ngAfterContentInit(): void {
     this.init();
     this.getFavorites();
+    this.getLatest();
+    this.getRecent();
     this.sharedSvc.videoRefresh.subscribe(() => {
       this.init();
     });
@@ -81,7 +84,6 @@ export class App implements AfterContentInit {
       this.favorites.set(message.records);
       this.firstFavorites.set(message.records.slice(0, 5));
       this.remainingFavorites.set(message.records.slice(5));
-      this.getLatest();
     });
   }
 
@@ -90,21 +92,27 @@ export class App implements AfterContentInit {
       this.latest.set(message.records);
       this.firstLatest.set(message.records.slice(0, 5));
       this.remainingLatest.set(message.records.slice(5));
-      this.getRecent();
     });
   }
 
-  getRecent() {
-    const start = 0;
-    const videoIds = recentViews.slice(start, start + 30);
+  async getRecent() {
+    const views = await this.recentSvc.getRecentAsync();
+    const videoIds = views.slice(0, 30);
+    if (!videoIds.length) {
+      this.recents.set([]);
+      this.firstRecent.set([]);
+      this.remainingRecent.set([]);
+      return;
+    }
     this.videoSvc.getVideoKeys(videoIds.map((d) => d.toString())).subscribe((res) => {
-      const message: TrackResponse = {
-        count: recentViews.length,
-        records: (res as TrackResponse).records,
-      };
-      this.recents.set(message.records);
-      this.firstRecent.set(message.records.slice(0, 5));
-      this.remainingRecent.set(message.records.slice(5));
+      const records: TrackInfo[] = [];
+      videoIds.forEach((id) => {
+        const record = (res as TrackResponse).records.find((f) => f.ID === id);
+        !!record && records.push(record);
+      });
+      this.recents.set(records);
+      this.firstRecent.set(records.slice(0, 5));
+      this.remainingRecent.set(records.slice(5));
     });
   }
 

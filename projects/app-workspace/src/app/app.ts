@@ -214,6 +214,10 @@ export class App implements OnInit, OnChanges {
     console.log({ views });
     const start = 30 * (this.pageNum() - 1);
     const videoIds = views.slice(start, start + 30);
+    if (!videoIds.length) {
+      this.setMessage({ count: 0, records: [] });
+      return;
+    }
     this.observe(this.videoSvc.getVideoKeys(videoIds.map((d) => d.toString())), (res) => {
       const records: TrackInfo[] = [];
       videoIds.forEach((id) => {

@@ -14,6 +14,7 @@ export interface GridLaunchInfo {
 export class HomeGrid implements OnInit, OnChanges {
   label = input('');
   videos = input<TrackInfo[]>([]);
+  emptyMessage = input('Nothing here yet');
   first = signal<TrackInfo[]>([]);
   remaining = signal<TrackInfo[]>([]);
   expanded = signal(false);

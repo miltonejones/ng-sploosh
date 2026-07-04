@@ -1,31 +1,32 @@
 .red {
-  color: red;
-}
-
-.card-menu.open {
-  right: 0;
-}
-
-.card-menu i {
-  cursor: pointer;
-}
-
-.card-menu i:hover {
-  color: red;
-}
-
-.card-menu:hover {
-  opacity: 1;
+  color: #e74c3c;
 }
 
 .card-menu {
   position: absolute;
-  top: 0.2rem;
+  top: 0;
+  right: 0;
   gap: 0.5rem;
-  opacity: 0.7;
-  right: -200px;
-  background-color: rgba(255, 255, 255, 0.5);
-  padding: 0.5rem 0.3rem;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.5));
+  padding: 0.5rem 0.5rem 0.5rem 2rem;
   z-index: 20;
-  transition: right 0.2s ease-in;
+  transform: translateX(110%);
+  transition: transform 0.2s ease-in;
+  border-radius: 0 0 0 8px;
+}
+
+.card-menu.open {
+  transform: translateX(0);
+}
+
+.card-menu i {
+  cursor: pointer;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.card-menu i:hover {
+  color: #e74c3c;
+  transform: scale(1.15);
 }

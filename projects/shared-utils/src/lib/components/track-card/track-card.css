@@ -1,28 +1,48 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.card {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
 .card-photo {
-  width: 14vw;
+  width: 100%;
   height: 140px;
-  background-size: 50% 100%;
+  background-size: cover;
+  background-position: center;
   position: relative;
   overflow: hidden;
 }
 
-.card-surface {
-  width: 14vw;
-  height: 140px;
-  background-color: transparent;
-  z-index: 10;
-}
-
-.card {
-  width: 14vw;
+.card-photo:hover .card-surface {
+  background: linear-gradient(0deg, rgba(0,0,0,0.4) 0%, transparent 40%);
 }
 
 .card-photo.visited {
   opacity: 0.5;
 }
 
+.card-surface {
+  width: 100%;
+  height: 140px;
+  background-color: transparent;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
 .card-body {
-  padding: 0.2rem;
+  padding: 0.3rem;
 }
 
 .card-avatar {
@@ -30,40 +50,43 @@
   height: 40px;
   border-radius: 0.25rem;
   overflow: hidden;
-}
-
-.favorite {
-  font-weight: 600;
-  color: red;
+  flex-shrink: 0;
 }
 
 .card-avatar img {
   width: 40px;
+  height: 40px;
+  object-fit: cover;
 }
 
 .card-marquee {
   display: flex;
   flex-direction: row;
-  gap: 0.2rem;
+  gap: 0.3rem;
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .card-title {
-  font-size: 1rem;
-  width: calc(14vw - 50px);
+  font-size: 0.85rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-bottom: 0;
   cursor: pointer;
-}
-
-.card-title.wide {
-  width: calc(14vw - 10px);
-  /* width: 230px; */
+  flex: 1;
 }
 
 .card-title:hover {
   text-decoration: underline;
+}
+
+.card-title.favorite {
+  font-weight: 600;
+  color: #e74c3c;
 }
 
 .card-text,
@@ -72,19 +95,40 @@
   flex-direction: row;
 }
 
+.card-foot {
+  justify-content: space-between;
+  margin-top: 0.2rem;
+}
+
 .card-foot a,
 .card-foot {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .card-foot a {
-  color: #444;
+  color: #666;
   text-decoration: none;
+  transition: color 0.15s ease;
 }
 .card-foot a:hover {
+  color: #333;
   text-decoration: underline;
 }
+
 .domain,
 .track-key {
   cursor: pointer;
+}
+
+/* Favorite heart animation */
+.fav-heart {
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+  color: #ccc;
+}
+.fav-heart.active {
+  color: #e74c3c;
+}
+.fav-heart:active {
+  transform: scale(1.3);
 }

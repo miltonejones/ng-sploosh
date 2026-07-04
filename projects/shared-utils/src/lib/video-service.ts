@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
 import {
   ActorInfo,
   ActorResponse,
@@ -40,7 +40,28 @@ export class VideoApiService {
   private readonly photoEndpoint = 'https://58uf2seho0.execute-api.us-east-1.amazonaws.com';
   private readonly javEndpoint = 'https://jhdcmv7zhi.execute-api.us-east-1.amazonaws.com';
 
+  private cache = new Map<string, { data: unknown; expires: number }>();
+  private readonly CACHE_TTL = 30_000; // 30 seconds
+
   constructor(private http: HttpClient) {}
+
+  private cachedGet<T>(key: string, factory: () => Observable<T>): Observable<T> {
+    const entry = this.cache.get(key);
+    if (entry && entry.expires > Date.now()) {
+      return of(entry.data as T);
+    }
+    return factory().pipe(
+      tap((data) => this.cache.set(key, { data, expires: Date.now() + this.CACHE_TTL })),
+    );
+  }
+
+  private invalidate(pattern: string): void {
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
 
   // ── Parsers ────────────────────────────────────────────────────────────────
 
@@ -53,7 +74,9 @@ export class VideoApiService {
   // ── Videos ─────────────────────────────────────────────────────────────────
 
   getVideos(page: number = 1): Observable<TrackResponse> {
-    return this.http.get<TrackResponse>(`${this.apiEndpoint}/videos/${page}`);
+    return this.cachedGet(`videos:${page}`, () =>
+      this.http.get<TrackResponse>(`${this.apiEndpoint}/videos/${page}`),
+    );
   }
 
   getVideo(id: number | string): Observable<TrackResponse> {
@@ -99,7 +122,7 @@ export class VideoApiService {
   deleteVideo(id: number | string): Observable<unknown> {
     return this.http.delete(`${this.apiEndpoint}/video/${id}`, {
       headers: JSON_HEADERS,
-    });
+    }).pipe(tap(() => { this.invalidate('videos'); this.invalidate('favorites'); this.invalidate('dash'); }));
   }
 
   toggleVideoFavorite(id: number | string): Observable<unknown> {
@@ -107,7 +130,7 @@ export class VideoApiService {
       `${this.apiEndpoint}/toggle-video-heart`,
       { ID: id },
       { headers: JSON_HEADERS },
-    );
+    ).pipe(tap(() => { this.invalidate('videos'); this.invalidate('favorites'); this.invalidate('dash'); }));
   }
 
   findVideos(param: string, page = 1, domain?: string): Observable<TrackResponse> {
@@ -187,7 +210,7 @@ export class VideoApiService {
           `${this.apiEndpoint}/model/cast`,
           { trackFk, modelFk },
           { headers: JSON_HEADERS },
-        );
+        ).pipe(tap(() => { this.invalidate('models'); this.invalidate('dash'); }));
       }),
     );
   }
@@ -215,13 +238,17 @@ export class VideoApiService {
   // ── Favorites ──────────────────────────────────────────────────────────────
 
   getFavorites(page: number): Observable<TrackResponse> {
-    return this.http.get<TrackResponse>(`${this.apiEndpoint}/favorite/${page}`);
+    return this.cachedGet(`favorites:${page}`, () =>
+      this.http.get<TrackResponse>(`${this.apiEndpoint}/favorite/${page}`),
+    );
   }
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
 
   getDash(): Observable<DashModel[]> {
-    return this.http.get<DashModel[]>(`${this.apiEndpoint}/dash`);
+    return this.cachedGet('dash', () =>
+      this.http.get<DashModel[]>(`${this.apiEndpoint}/dash`),
+    );
   }
 
   // ── JAV / Photos ───────────────────────────────────────────────────────────
