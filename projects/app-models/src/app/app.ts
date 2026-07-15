@@ -119,7 +119,7 @@ export class App implements OnInit {
       });
       return;
     }
-    this.videoApi.getModels(pageNum, this.sortField()).subscribe((response: ModelResponse) => {
+    this.videoApi.getModels(pageNum, this.sortField(), this.sortDesc() ? 'desc' : 'asc').subscribe((response: ModelResponse) => {
       console.log('Model Response:', response);
       this.setMessage(response);
     });

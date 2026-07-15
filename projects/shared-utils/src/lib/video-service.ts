@@ -149,9 +149,12 @@ export class VideoApiService {
 
   // ── Models ─────────────────────────────────────────────────────────────────
 
-  getModels(page: number, sort?: string): Observable<ModelResponse> {
-    const params = sort ? `?sort=${sort}` : '';
-    return this.http.get<ModelResponse>(`${this.apiEndpoint}/models/${page}${params}`);
+  getModels(page: number, sort?: string, direction?: string): Observable<ModelResponse> {
+    const params: string[] = [];
+    if (sort) params.push(`sort=${sort}`);
+    if (direction) params.push(`direction=${direction}`);
+    const query = params.length ? `?${params.join('&')}` : '';
+    return this.http.get<ModelResponse>(`${this.apiEndpoint}/models/${page}${query}`);
   }
 
   getModel(
