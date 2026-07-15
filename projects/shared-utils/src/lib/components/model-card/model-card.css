@@ -39,9 +39,15 @@
   border-top: 1px solid rgba(0,0,0,0.05);
 }
 
-.card-title span {
-  color: #999;
-  font-size: 0.75rem;
+.card-title .count {
+  font-size: 0.72rem;
+  margin-left: 0.15rem;
+}
+.card-title .videos {
+  color: #888;
+}
+.card-title .faves {
+  color: #e25555;
 }
 
 .card.small {

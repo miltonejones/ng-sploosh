@@ -11,6 +11,8 @@ import {
   SharedStateService,
 } from 'shared-utils';
 
+type SortField = 'name' | 'videoCount' | 'FaveCount';
+
 interface ModelInfo {
   count: number;
   records: DashModel[];
@@ -30,10 +32,16 @@ export class App implements OnInit {
     records: [],
   });
   param = signal('');
+  sortField = signal<SortField>('name');
 
   count = computed(() => this.response().count);
   pageLinks = signal<PageLink[]>([]);
-  results = signal<DashModel[]>([]);
+  sortedRecords = computed(() => {
+    const records = this.response().records;
+    const field = this.sortField();
+    if (field === 'name') return records;
+    return [...records].sort((a, b) => (b[field] as number) - (a[field] as number));
+  });
 
   constructor(
     public videoApi: VideoApiService,
@@ -46,7 +54,6 @@ export class App implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((params) => {
       const page = params['pageNum'] ? Number(params['pageNum']) : 1;
-      // alert(`Page number from route: ${page}`);
       this.page.set(page);
       this.param.set(params['searchParam'] || '');
       this.getPage(page);
@@ -55,12 +62,6 @@ export class App implements OnInit {
     this.sharedSvc.videoRefresh.subscribe(() => {
       this.getPage(this.page());
     });
-
-    // this.getPage(this.page());
-
-    // this.sharedSvc.modelSelect.subscribe((id) => {
-    //   alert(`Model with ID ${id} selected!`);
-    // });
   }
 
   getModel(model: DashModel) {
@@ -77,6 +78,10 @@ export class App implements OnInit {
     this.router.navigate(['/models', pageNum]);
   }
 
+  setSort(field: SortField) {
+    this.sortField.set(field);
+  }
+
   setMessage(response: ModelResponse) {
     this.response.set({
       count: response.count,
@@ -84,7 +89,8 @@ export class App implements OnInit {
         ID: model.ID,
         name: model.name!,
         image: model.image || '',
-        FaveCount: model.VideoCount || 0,
+        FaveCount: model.likedCount || 0,
+        videoCount: model.VideoCount || model.videoCount || 0,
       })),
     });
     const c = this.pageSvc.getPageLinks(this.page(), 30, response.count);
@@ -98,7 +104,6 @@ export class App implements OnInit {
     });
 
     if (this.param()) {
-      //   debugger;
       this.videoApi.getModelsByName(this.param()).subscribe((response: any) => {
         console.log('Find Videos Response:', response);
 

@@ -1,8 +1,10 @@
 <div class="card" (click)="selectModel(model()!)" [class.small]="size() === 'sm'">
   <img [src]="source()" (error)="setErrorImage()" [title]="model()?.name" />
   <div class="card-title">
-    {{ model()?.name }} @if(!!model()?.FaveCount) {
-    <span>({{ model()?.FaveCount }})</span>
+    {{ model()?.name }} @if(!!model()?.videoCount) {
+    <span class="count videos" title="{{ model()?.videoCount }} videos">&#9654; {{ model()?.videoCount }}</span>
+    } @if(!!model()?.FaveCount) {
+    <span class="count faves" title="{{ model()?.FaveCount }} favorites">&#9829; {{ model()?.FaveCount }}</span>
     }
   </div>
 </div>

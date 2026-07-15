@@ -9,8 +9,15 @@
   ></lib-paginator>
 </div>
 
+<div class="sort-bar">
+  <span class="sort-label">Sort:</span>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'name'" (click)="setSort('name')">Name</button>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'videoCount'" (click)="setSort('videoCount')">Videos</button>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'FaveCount'" (click)="setSort('FaveCount')">&#9829; Faves</button>
+</div>
+
 <div class="model-grid">
-  @for (record of response().records; track $index) {
+  @for (record of sortedRecords(); track $index) {
     <lib-model-card (select)="getModel($event)" [model]="record"></lib-model-card>
   }
 </div>

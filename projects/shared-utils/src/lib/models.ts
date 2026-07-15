@@ -23,6 +23,7 @@ export interface DashModel {
   name: string;
   image: string;
   FaveCount: number;
+  videoCount: number;
 }
 
 export interface InsertResponse {
@@ -53,6 +54,8 @@ export interface ModelInfo {
   name?: string;
   image?: string | null;
   VideoCount?: number;
+  likedCount?: number;
+  videoCount?: number;
 }
 
 export interface ModelResponse {
