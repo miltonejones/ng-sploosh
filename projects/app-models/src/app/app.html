@@ -13,11 +13,11 @@
   <span class="sort-label">Sort:</span>
   <button class="btn btn-sm" [class.btn-primary]="sortField() === 'name'" (click)="setSort('name')">Name {{ sortField() === 'name' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
   <button class="btn btn-sm" [class.btn-primary]="sortField() === 'videoCount'" (click)="setSort('videoCount')">Videos {{ sortField() === 'videoCount' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
-  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'FaveCount'" (click)="setSort('FaveCount')">&#9829; Faves {{ sortField() === 'FaveCount' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'faveCount'" (click)="setSort('faveCount')">&#9829; Faves {{ sortField() === 'faveCount' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
 </div>
 
 <div class="model-grid">
-  @for (record of sortedRecords(); track $index) {
+  @for (record of response().records; track record.ID) {
     <lib-model-card (select)="getModel($event)" [model]="record"></lib-model-card>
   }
 </div>

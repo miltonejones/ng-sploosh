@@ -11,7 +11,7 @@ import {
   SharedStateService,
 } from 'shared-utils';
 
-type SortField = 'name' | 'videoCount' | 'FaveCount';
+type SortField = 'name' | 'videoCount' | 'faveCount';
 
 interface ModelInfo {
   count: number;
@@ -37,14 +37,6 @@ export class App implements OnInit {
 
   count = computed(() => this.response().count);
   pageLinks = signal<PageLink[]>([]);
-  sortedRecords = computed(() => {
-    const records = this.response().records;
-    const field = this.sortField();
-    const desc = this.sortDesc();
-    if (field === 'name') return desc ? records : [...records].reverse();
-    const sorted = [...records].sort((a, b) => (a[field] as number) - (b[field] as number));
-    return desc ? sorted.reverse() : sorted;
-  });
 
   constructor(
     public videoApi: VideoApiService,
@@ -88,6 +80,7 @@ export class App implements OnInit {
       this.sortField.set(field);
       this.sortDesc.set(true);
     }
+    this.getPage(this.page());
   }
 
   setMessage(response: ModelResponse) {
@@ -126,7 +119,7 @@ export class App implements OnInit {
       });
       return;
     }
-    this.videoApi.getModels(pageNum).subscribe((response: ModelResponse) => {
+    this.videoApi.getModels(pageNum, this.sortField()).subscribe((response: ModelResponse) => {
       console.log('Model Response:', response);
       this.setMessage(response);
     });

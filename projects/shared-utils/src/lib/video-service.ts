@@ -149,8 +149,9 @@ export class VideoApiService {
 
   // ── Models ─────────────────────────────────────────────────────────────────
 
-  getModels(page: number): Observable<ModelResponse> {
-    return this.http.get<ModelResponse>(`${this.apiEndpoint}/models/${page}`);
+  getModels(page: number, sort?: string): Observable<ModelResponse> {
+    const params = sort ? `?sort=${sort}` : '';
+    return this.http.get<ModelResponse>(`${this.apiEndpoint}/models/${page}${params}`);
   }
 
   getModel(
