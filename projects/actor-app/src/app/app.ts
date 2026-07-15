@@ -200,6 +200,7 @@ export class App implements OnInit {
       image: actor.image,
       name: actor.name,
       FaveCount: 0,
+      videoCount: 0,
     };
   }
 
