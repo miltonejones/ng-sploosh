@@ -11,9 +11,9 @@
 
 <div class="sort-bar">
   <span class="sort-label">Sort:</span>
-  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'name'" (click)="setSort('name')">Name</button>
-  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'videoCount'" (click)="setSort('videoCount')">Videos</button>
-  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'FaveCount'" (click)="setSort('FaveCount')">&#9829; Faves</button>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'name'" (click)="setSort('name')">Name {{ sortField() === 'name' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'videoCount'" (click)="setSort('videoCount')">Videos {{ sortField() === 'videoCount' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
+  <button class="btn btn-sm" [class.btn-primary]="sortField() === 'FaveCount'" (click)="setSort('FaveCount')">&#9829; Faves {{ sortField() === 'FaveCount' ? (sortDesc() ? '↓' : '↑') : '' }}</button>
 </div>
 
 <div class="model-grid">

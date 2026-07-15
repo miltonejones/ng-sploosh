@@ -33,14 +33,17 @@ export class App implements OnInit {
   });
   param = signal('');
   sortField = signal<SortField>('name');
+  sortDesc = signal(true);
 
   count = computed(() => this.response().count);
   pageLinks = signal<PageLink[]>([]);
   sortedRecords = computed(() => {
     const records = this.response().records;
     const field = this.sortField();
-    if (field === 'name') return records;
-    return [...records].sort((a, b) => (b[field] as number) - (a[field] as number));
+    const desc = this.sortDesc();
+    if (field === 'name') return desc ? records : [...records].reverse();
+    const sorted = [...records].sort((a, b) => (a[field] as number) - (b[field] as number));
+    return desc ? sorted.reverse() : sorted;
   });
 
   constructor(
@@ -79,7 +82,12 @@ export class App implements OnInit {
   }
 
   setSort(field: SortField) {
-    this.sortField.set(field);
+    if (this.sortField() === field) {
+      this.sortDesc.update(d => !d);
+    } else {
+      this.sortField.set(field);
+      this.sortDesc.set(true);
+    }
   }
 
   setMessage(response: ModelResponse) {
