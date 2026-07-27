@@ -1,5 +1,6 @@
 name: Build & Deploy to Production Container
 
+# Trigger: push to deploy-prod branch only — isolated from main/master workflows
 on:
   push:
     branches: [deploy-prod]
