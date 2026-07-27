@@ -75,7 +75,6 @@ jobs:
       - name: Deploy to production container
         run: |
           curl -X POST https://dockyard-ai.com/api/github/pull-to-container \
-            -H "x-webhook-secret: ${{ secrets.DOCKYARD_WEBHOOK_SECRET }}" \
             -H "Content-Type: application/json" \
             -d '{"owner":"miltonejones","repo":"ng-sploosh","ref":"container-prod","id":"ng-sploosh-prod","path":"/usr/share/nginx/html"}' \
             --max-time 60 \
