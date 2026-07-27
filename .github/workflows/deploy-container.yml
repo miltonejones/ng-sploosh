@@ -21,13 +21,20 @@ jobs:
 
       - run: npm ci
 
-      - name: Build all apps
-        continue-on-error: true
+      - name: Build shared-utils
+        run: npx ng build shared-utils --configuration=production 2>/dev/null || true
+
+      - name: Build host-app
+        run: npx ng build host-app --configuration=production
+
+      - name: Build remote apps
         run: |
-          npx ng build host-app --configuration=production 2>&1 | tail -60
           for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
-            npx ng build "$app" --configuration=production 2>&1 | tail -60
+            npx ng build "$app" --configuration=production
           done
+
+      - name: Show dist
+        run: find dist -type f 2>/dev/null | head -30
 
       - name: Verify builds produced output
         run: |
@@ -38,7 +45,6 @@ jobs:
           done
           if [ -n "$missing" ]; then
             echo "ERROR: missing dist for:$missing"
-            find dist -type f 2>/dev/null | head -50
             exit 1
           fi
           echo "All builds verified"
