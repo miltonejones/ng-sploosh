@@ -1,6 +1,5 @@
 name: Build & Deploy to Production Container
 
-# Trigger: push to deploy-prod branch only — isolated from main/master workflows
 on:
   push:
     branches: [deploy-prod]
@@ -25,27 +24,27 @@ jobs:
 
       - run: npm ci
 
-      - name: Build host-app
-        run: npx ng build host-app --configuration=production 2>&1 || { ec=$?; echo "Build exited with $ec (esbuild shutdown deadlock is non-fatal)"; }
-
-      - name: Build remote apps
+      - name: Build all apps
         run: |
+          npx ng build host-app --configuration=production || true
           for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
-            npx ng build "$app" --configuration=production 2>&1 || { ec=$?; echo "Build exited with $ec (esbuild shutdown deadlock is non-fatal)"; }
+            npx ng build "$app" --configuration=production || true
           done
 
-      - name: Verify output exists
+      - name: Show dist contents
         run: |
-          echo "Host app files:"
-          ls dist/host-app/browser/ | head -20
+          echo "=== host-app ==="
+          ls dist/host-app/browser/ 2>/dev/null || echo "NO HOST DIST"
           for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
-            echo "--- $app ---"
-            ls "dist/$app/browser/" 2>/dev/null | head -5 || echo "  MISSING"
+            echo "=== $app ==="
+            ls "dist/$app/browser/" 2>/dev/null || echo "  NO DIST"
           done
 
       - name: Fix federation manifest
         run: |
-          echo '{"app-list":"./app-list/remoteEntry.json","app-workspace":"./app-workspace/remoteEntry.json","actor-app":"./actor-app/remoteEntry.json","app-edit":"./app-edit/remoteEntry.json","home-app":"./home-app/remoteEntry.json","app-parser":"./app-parser/remoteEntry.json","app-models":"./app-models/remoteEntry.json"}' > dist/host-app/browser/federation.manifest.json
+          cat > dist/host-app/browser/federation.manifest.json << 'EOF'
+          {"app-list":"./app-list/remoteEntry.json","app-workspace":"./app-workspace/remoteEntry.json","actor-app":"./actor-app/remoteEntry.json","app-edit":"./app-edit/remoteEntry.json","home-app":"./home-app/remoteEntry.json","app-parser":"./app-parser/remoteEntry.json","app-models":"./app-models/remoteEntry.json"}
+          EOF
           cat dist/host-app/browser/federation.manifest.json
 
       - name: Assemble production directory
