@@ -23,12 +23,12 @@ jobs:
       - run: npm ci
 
       - name: Build host-app
-        run: npx ng build host-app --configuration=production --base-href /
+        run: npx ng build host-app --configuration=production
 
       - name: Build remote apps
         run: |
           for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
-            npx ng build "$app" --configuration=production --base-href /
+            npx ng build "$app" --configuration=production
           done
 
       - name: Fix federation manifest (relative paths)
