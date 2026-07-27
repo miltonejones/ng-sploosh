@@ -31,9 +31,17 @@ jobs:
             npx ng build "$app" --configuration=production || true
           done
 
-      - name: Fix federation manifest
+      - name: Show dist contents
         run: |
-          node build-scripts/prepare-federation.js
+          echo "=== host-app ==="
+          ls dist/host-app/browser/ 2>/dev/null || echo "NO HOST DIST"
+          for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
+            echo "=== $app ==="
+            ls "dist/$app/browser/" 2>/dev/null || echo "  NO DIST"
+          done
+
+      - name: Fix federation manifest
+        run: node build-scripts/prepare-federation.js || true
 
       - name: Assemble production directory
         run: |

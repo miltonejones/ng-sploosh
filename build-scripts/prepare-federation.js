@@ -1,5 +1,6 @@
 const fs = require('fs');
-const path = require('path');
+
+const dest = 'dist/host-app/browser/federation.manifest.json';
 
 const manifest = {
   'app-list': './app-list/remoteEntry.json',
@@ -11,7 +12,11 @@ const manifest = {
   'app-models': './app-models/remoteEntry.json',
 };
 
-const dest = 'dist/host-app/browser/federation.manifest.json';
+if (!fs.existsSync('dist/host-app/browser')) {
+  console.error('ERROR: dist/host-app/browser does not exist');
+  process.exit(1);
+}
+
 fs.writeFileSync(dest, JSON.stringify(manifest));
 console.log('Wrote federation manifest to', dest);
 console.log(JSON.stringify(manifest, null, 2));
