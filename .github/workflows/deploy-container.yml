@@ -71,10 +71,11 @@ jobs:
           force_orphan: true
           commit_message: 'deploy: container production build [skip ci]'
 
-      - name: Trigger container deployment
+      - name: Deploy to production container
         run: |
-          curl -X POST https://dockyard-ai.com/gw/ng-sploosh-deploy \
+          curl -X POST https://dockyard-ai.com/api/github/pull-to-container \
+            -H "x-webhook-secret: ${{ secrets.DOCKYARD_WEBHOOK_SECRET }}" \
             -H "Content-Type: application/json" \
-            -d '{"ref":"container-prod","repo":"miltonejones/ng-sploosh","container":"ng-sploosh-prod"}' \
-            --max-time 30 \
-            --fail-with-body || echo "Webhook call completed (check Dockyard for deployment status)"
+            -d '{"owner":"miltonejones","repo":"ng-sploosh","ref":"container-prod","id":"ng-sploosh-prod","path":"/usr/share/nginx/html"}' \
+            --max-time 60 \
+            --fail-with-body
