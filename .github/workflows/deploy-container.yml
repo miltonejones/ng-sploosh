@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-env:
-  NODE_OPTIONS: --max-old-space-size=4096
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,7 +38,7 @@ jobs:
           if [ -n "$missing" ]; then
             echo "ERROR: missing dist for:$missing"
             echo "=== Listing dist ==="
-            find dist -type f | head -50
+            find dist -type f 2>/dev/null | head -50
             exit 1
           fi
           echo "All builds verified"
@@ -60,8 +57,8 @@ jobs:
             cp -r "dist/$app/browser/"* "prod-dist/$app/"
             echo "Copied $app"
           done
-          echo "=== prod-dist contents ==="
-          ls -la prod-dist/
+          echo "=== prod-dist ==="
+          ls prod-dist/
 
       - name: Deploy to container-prod branch
         uses: peaceiris/actions-gh-pages@v4
