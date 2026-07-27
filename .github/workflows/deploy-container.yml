@@ -33,9 +33,6 @@ jobs:
             npx ng build "$app" --configuration=production
           done
 
-      - name: Show dist
-        run: find dist -type f 2>/dev/null | head -30
-
       - name: Verify builds produced output
         run: |
           missing=""
@@ -45,6 +42,7 @@ jobs:
           done
           if [ -n "$missing" ]; then
             echo "ERROR: missing dist for:$missing"
+            find dist -type f 2>/dev/null | head -50
             exit 1
           fi
           echo "All builds verified"
@@ -63,8 +61,6 @@ jobs:
             cp -r "dist/$app/browser/"* "prod-dist/$app/"
             echo "Copied $app"
           done
-          echo "=== prod-dist ==="
-          ls prod-dist/
 
       - name: Deploy to container-prod branch
         uses: peaceiris/actions-gh-pages@v4
@@ -74,3 +70,11 @@ jobs:
           publish_branch: container-prod
           force_orphan: true
           commit_message: 'deploy: container production build [skip ci]'
+
+      - name: Trigger container deployment
+        run: |
+          curl -X POST https://dockyard-ai.com/gw/ng-sploosh-deploy \
+            -H "Content-Type: application/json" \
+            -d '{"ref":"container-prod","repo":"miltonejones/ng-sploosh","container":"ng-sploosh-prod"}' \
+            --max-time 30 \
+            --fail-with-body || echo "Webhook call completed (check Dockyard for deployment status)"
