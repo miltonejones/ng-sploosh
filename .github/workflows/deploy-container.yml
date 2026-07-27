@@ -31,24 +31,19 @@ jobs:
             npx ng build "$app" --configuration=production || true
           done
 
-      - name: Assemble and deploy
+      - name: Fix federation manifest
+        run: |
+          node build-scripts/prepare-federation.js
+
+      - name: Assemble production directory
         run: |
           rm -rf prod-dist
           mkdir -p prod-dist
-
           cp dist/host-app/browser/* prod-dist/
-
           for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
             mkdir -p "prod-dist/$app"
             cp -r "dist/$app/browser/"* "prod-dist/$app/"
           done
-
-          echo '{"app-list":"./app-list/remoteEntry.json","app-workspace":"./app-workspace/remoteEntry.json","actor-app":"./actor-app/remoteEntry.json","app-edit":"./app-edit/remoteEntry.json","home-app":"./home-app/remoteEntry.json","app-parser":"./app-parser/remoteEntry.json","app-models":"./app-models/remoteEntry.json"}' > prod-dist/federation.manifest.json
-
-          echo "Manifest written:"
-          cat prod-dist/federation.manifest.json
-          echo "Files in prod-dist:"
-          ls prod-dist/
 
       - name: Deploy to container-prod branch
         uses: peaceiris/actions-gh-pages@v4
