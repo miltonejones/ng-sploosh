@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm install
 
       - name: Build host-app
         run: npx ng build host-app --configuration=production --base-href /
@@ -48,9 +48,7 @@ jobs:
         run: |
           rm -rf prod-dist
           mkdir -p prod-dist
-          # host-app files (exclude federation.manifest.json to use our fixed one)
           cp dist/host-app/browser/* prod-dist/
-          # remote apps (strip browser/ subdirectory)
           for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
             cp -r "dist/$app/browser/"* "prod-dist/$app/"
           done
