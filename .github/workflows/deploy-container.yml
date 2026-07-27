@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - run: npm install
+      - run: npm ci
 
       - name: Build host-app
         run: npx ng build host-app --configuration=production --base-href /
