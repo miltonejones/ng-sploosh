@@ -44,8 +44,7 @@ jobs:
           done
 
       - name: Fix federation manifest (relative paths)
-        run: |
-          printf '{\n  "app-list": "./app-list/remoteEntry.json",\n  "app-workspace": "./app-workspace/remoteEntry.json",\n  "actor-app": "./actor-app/remoteEntry.json",\n  "app-edit": "./app-edit/remoteEntry.json",\n  "home-app": "./home-app/remoteEntry.json",\n  "app-parser": "./app-parser/remoteEntry.json",\n  "app-models": "./app-models/remoteEntry.json"\n}\n' > dist/host-app/browser/federation.manifest.json
+        run: node -e 'require("fs").writeFileSync("dist/host-app/browser/federation.manifest.json",JSON.stringify({["app-list"]:"./app-list/remoteEntry.json",["app-workspace"]:"./app-workspace/remoteEntry.json",["actor-app"]:"./actor-app/remoteEntry.json",["app-edit"]:"./app-edit/remoteEntry.json",["home-app"]:"./home-app/remoteEntry.json",["app-parser"]:"./app-parser/remoteEntry.json",["app-models"]:"./app-models/remoteEntry.json"},null,2))'
 
       - name: Assemble production directory
         run: |
