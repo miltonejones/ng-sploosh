@@ -43,8 +43,10 @@ jobs:
             ls "dist/$app/browser/" 2>/dev/null | head -5 || echo "  MISSING"
           done
 
-      - name: Fix federation manifest (relative paths)
-        run: node -e 'require("fs").writeFileSync("dist/host-app/browser/federation.manifest.json",JSON.stringify({["app-list"]:"./app-list/remoteEntry.json",["app-workspace"]:"./app-workspace/remoteEntry.json",["actor-app"]:"./actor-app/remoteEntry.json",["app-edit"]:"./app-edit/remoteEntry.json",["home-app"]:"./home-app/remoteEntry.json",["app-parser"]:"./app-parser/remoteEntry.json",["app-models"]:"./app-models/remoteEntry.json"},null,2))'
+      - name: Fix federation manifest
+        run: |
+          echo '{"app-list":"./app-list/remoteEntry.json","app-workspace":"./app-workspace/remoteEntry.json","actor-app":"./actor-app/remoteEntry.json","app-edit":"./app-edit/remoteEntry.json","home-app":"./home-app/remoteEntry.json","app-parser":"./app-parser/remoteEntry.json","app-models":"./app-models/remoteEntry.json"}' > dist/host-app/browser/federation.manifest.json
+          cat dist/host-app/browser/federation.manifest.json
 
       - name: Assemble production directory
         run: |
