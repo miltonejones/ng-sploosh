@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
 
       - name: Build host-app
-        run: npx ng build host-app --configuration=production 2>&1 || { ec=$?; echo "Build exited with $ec (esbuild shutdown deadlock is non-fatal)"; exit 0; }
+        run: npx ng build host-app --configuration=production 2>&1 || { ec=$?; echo "Build exited with $ec (esbuild shutdown deadlock is non-fatal)"; }
 
       - name: Build remote apps
         run: |
@@ -45,17 +45,7 @@ jobs:
 
       - name: Fix federation manifest (relative paths)
         run: |
-          cat > dist/host-app/browser/federation.manifest.json << 'MANIFEST'
-          {
-            "app-list": "./app-list/remoteEntry.json",
-            "app-workspace": "./app-workspace/remoteEntry.json",
-            "actor-app": "./actor-app/remoteEntry.json",
-            "app-edit": "./app-edit/remoteEntry.json",
-            "home-app": "./home-app/remoteEntry.json",
-            "app-parser": "./app-parser/remoteEntry.json",
-            "app-models": "./app-models/remoteEntry.json"
-          }
-          MANIFEST
+          printf '{\n  "app-list": "./app-list/remoteEntry.json",\n  "app-workspace": "./app-workspace/remoteEntry.json",\n  "actor-app": "./actor-app/remoteEntry.json",\n  "app-edit": "./app-edit/remoteEntry.json",\n  "home-app": "./home-app/remoteEntry.json",\n  "app-parser": "./app-parser/remoteEntry.json",\n  "app-models": "./app-models/remoteEntry.json"\n}\n' > dist/host-app/browser/federation.manifest.json
 
       - name: Assemble production directory
         run: |
