@@ -1,6 +1,6 @@
 <div class="d-flex gap-1 p-1">
-  @for (btn of buttons; track btn.address) {
-  <a class="btn btn-sm" [class.btn-primary]="btn.active" [href]="btn.address">
+  @for (btn of buttons; track btn.label) {
+  <a class="btn btn-sm" [class.btn-primary]="btn.active" (click)="navigate(btn.commands)" style="cursor:pointer">
     {{ btn.label }}
   </a>
   }

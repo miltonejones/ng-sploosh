@@ -1,0 +1,65 @@
+name: Build & Deploy to Production Container
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build host-app
+        run: npx ng build host-app --configuration=production --base-href /
+
+      - name: Build remote apps
+        run: |
+          for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
+            npx ng build "$app" --configuration=production --base-href /
+          done
+
+      - name: Fix federation manifest (relative paths)
+        run: |
+          cat > dist/host-app/browser/federation.manifest.json << 'MANIFEST'
+          {
+            "app-list": "./app-list/remoteEntry.json",
+            "app-workspace": "./app-workspace/remoteEntry.json",
+            "actor-app": "./actor-app/remoteEntry.json",
+            "app-edit": "./app-edit/remoteEntry.json",
+            "home-app": "./home-app/remoteEntry.json",
+            "app-parser": "./app-parser/remoteEntry.json",
+            "app-models": "./app-models/remoteEntry.json"
+          }
+          MANIFEST
+
+      - name: Assemble production directory
+        run: |
+          rm -rf prod-dist
+          mkdir -p prod-dist
+          # host-app files (exclude federation.manifest.json to use our fixed one)
+          cp dist/host-app/browser/* prod-dist/
+          # remote apps (strip browser/ subdirectory)
+          for app in app-list app-workspace actor-app app-edit home-app app-parser app-models; do
+            cp -r "dist/$app/browser/"* "prod-dist/$app/"
+          done
+
+      - name: Deploy to production branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./prod-dist
+          publish_branch: production
+          force_orphan: true
+          commit_message: 'deploy: production build [skip ci]'

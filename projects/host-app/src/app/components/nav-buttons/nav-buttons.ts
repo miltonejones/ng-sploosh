@@ -1,10 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 
 export interface NavButton {
   label: string;
-  address: string;
-  key: string[];
+  path: string;
+  commands: string[];
   active: boolean;
 }
 
@@ -14,46 +15,37 @@ export interface NavButton {
   templateUrl: './nav-buttons.html',
   styleUrl: './nav-buttons.css',
 })
-export class NavButtons implements OnInit {
+export class NavButtons implements OnInit, OnDestroy {
   public buttons: NavButton[] = [
-    {
-      label: 'Home',
-      address: '/home',
-      key: ['home'],
-      active: false,
-    },
-    {
-      label: 'Videos',
-      address: '/videos/1',
-      key: ['find', 'videos', 'domain'],
-      active: false,
-    },
-    {
-      label: 'Favorites',
-      address: '/favorites/1',
-      key: ['favorites'],
-      active: false,
-    },
-    {
-      label: 'Recently Watched',
-      address: '/recent/1',
-      key: ['recent'],
-      active: false,
-    },
-    {
-      label: 'Models',
-      address: '/models/1',
-      key: ['models'],
-      active: false,
-    },
+    { label: 'Home',         path: '/home',     commands: ['/home'],        active: false },
+    { label: 'Videos',       path: '/videos',   commands: ['/videos', '1'], active: false },
+    { label: 'Favorites',    path: '/favorites', commands: ['/favorites', '1'], active: false },
+    { label: 'Recently Watched', path: '/recent', commands: ['/recent', '1'],  active: false },
+    { label: 'Models',       path: '/models',   commands: ['/models', '1'],  active: false },
   ];
 
-  // private router = inject(Router);
+  private router = inject(Router);
+  private sub?: Subscription;
+
+  navigate(commands: string[]) {
+    this.router.navigate(commands);
+  }
+
   ngOnInit(): void {
-    // alert('url: ' + this.router.url);
+    this.sub = this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => this.updateActive());
+    this.updateActive();
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  private updateActive(): void {
+    const url = this.router.url.split('?')[0];
     this.buttons.forEach((btn) => {
-      btn.active = btn.key.some((key) => window.location.href.indexOf(key) > 0);
+      btn.active = url.startsWith(btn.path);
     });
-    // alert(JSON.stringify(this.buttons, null, 2));
   }
 }
