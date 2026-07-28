@@ -19,4 +19,3 @@ if (!fs.existsSync('dist/host-app/browser')) {
 
 fs.writeFileSync(dest, JSON.stringify(manifest));
 console.log('Wrote federation manifest to', dest);
-console.log(JSON.stringify(manifest, null, 2));
